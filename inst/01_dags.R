@@ -6,10 +6,10 @@
 
 #... Libraries ----
 
+library(tidyverse)
 library(ggdag)
-theme_set(theme_dag())
 
-theme_set(theme_dag)
+theme_set(theme_dag())
 
 #... Functions ----
 
@@ -40,9 +40,9 @@ dag = ggdag::dagify(
   age ~ sex + ms + ss + edu + inc + rc,
   # nothing affects sex in this DAG
   ms ~  age + stress + religion + inc,
-  ss ~ stress + edu, 
-  edu,
-  inc,
+  ss ~ stress + edu + sex + inc, 
+  edu ~ age + sex, 
+  inc ~ edu + sex + rc,
   stress ~ inc, 
   religion ~ edu,
   exposure = "bzd",
@@ -74,7 +74,10 @@ dag %>%
 dag %>% 
   ggdag_adjustment_set()
 
+#... D-seperated ----
 
+# dag |> 
+#   ggdag::ggdag_dseparated(controlling_for = "age")
 
 # Depression  ----
 

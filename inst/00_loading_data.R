@@ -7,6 +7,8 @@
 #... Libraries ----
 
 library(tidyverse)
+library(googlesheets4)
+library(janitor)
 
 #... Functions ----
 
@@ -16,4 +18,7 @@ lapply(list.files("R/"), function(x) source(paste0("R/", x)))
 
 #... Dependencies ----
 
-# Simulated Data ----
+# Data ----
+
+dat <- read_csv(file = "data/2206009_MemorialUniversity_GMugford_Baseline_CoPv7.csv") %>% 
+  janitor::clean_names()

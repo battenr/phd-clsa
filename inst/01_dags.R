@@ -6,7 +6,10 @@
 
 #... Libraries ----
 
-library(tidyverse)
+library(ggdag)
+theme_set(theme_dag())
+
+theme_set(theme_dag)
 
 #... Functions ----
 
@@ -27,10 +30,51 @@ lapply(list.files("R/"), function(x) source(paste0("R/", x)))
 # an open path
 
 # Covariates associated with BZD use: 
-# marital status, age, sex, income, province, 
-
+# age, sex, marital status, smoking status, education, income, region of canada
 
 # Anxiety  ----
+
+dag = ggdag::dagify(
+  anxiety ~ bzd + ms + stress, 
+  bzd ~ age + sex + ms + ss + edu + inc + rc, 
+  age ~ sex + ms + ss + edu + inc + rc,
+  # nothing affects sex in this DAG
+  ms ~  age + stress + religion + inc,
+  ss ~ stress + edu, 
+  edu,
+  inc,
+  stress ~ inc, 
+  religion ~ edu,
+  exposure = "bzd",
+  outcome = "anxiety",
+  labels = c(
+    anxiety = "Anxiety",
+    bzd = "Benzodiazepine\nUse", 
+    age = "Age",
+    sex = "Sex",
+    ms = "Marital\nStatus",
+    ss = "Smoking\nStatus",
+    edu = "Education",
+    inc = "Income",
+    rc = "Region of\nCanada",
+    stress = "Stress",
+    religion = "Religion"
+  )
+) 
+
+#... Draw DAG ----
+
+dag %>% 
+  ggdag::ggdag(layout = "circle", 
+               text = FALSE,
+               use_labels = "label")
+
+#... Adjustment Set ----
+
+dag %>% 
+  ggdag_adjustment_set()
+
+
 
 # Depression  ----
 

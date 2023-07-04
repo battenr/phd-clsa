@@ -35,7 +35,7 @@ lapply(list.files("R/"), function(x) source(paste0("R/", x)))
 # Anxiety  ----
 
 dag = ggdag::dagify(
-  anxiety ~ bzd + ms + stress, 
+  anxiety ~ bzd + ms + stress + inc, 
   bzd ~ age + sex + ms + ss + edu + inc + rc, 
   age ~ sex + ms + ss + edu + inc + rc,
   # nothing affects sex in this DAG
@@ -74,12 +74,31 @@ dag %>%
 dag %>% 
   ggdag_adjustment_set()
 
+#... Open Paths ----
+
+dag |> 
+  ggdag_paths(from = "bzd", to = "anxiety")
+
+#... Colliders ----
+
+dag |> 
+  ggdag_collider()
+
 #... D-seperated ----
 
 # dag |> 
 #   ggdag::ggdag_dseparated(controlling_for = "age")
 
 # Depression  ----
+
+
+
+#... Draw DAG ----
+
+dag %>% 
+  ggdag::ggdag(layout = "circle", 
+               text = FALSE,
+               use_labels = "label")
 
 # Diabetes Mellitus  ----
 

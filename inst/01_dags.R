@@ -34,17 +34,38 @@ lapply(list.files("R/"), function(x) source(paste0("R/", x)))
 
 # Anxiety  ----
 
+# Might have to only say anxiety and BZD is an associational relationship because
+# anxiety can cause BZDs, therefore not making the DAG acyclic
+
 dag = ggdag::dagify(
-  anxiety ~ bzd + ms + stress + inc, 
-  bzd ~ age + sex + ms + ss + edu + inc + rc, 
+  anxiety ~ bzd + age + 
+    
+    stress + inc + ,
+  
+    
+    
+    
+    
+    bzd + ms + stress + inc + insomnia, 
+  bzd ~ age + sex
+    
+    prescriber + 
+  
+    
+    
+    
+  
+  
+  bzd ~ age + sex + ms + ss + edu + inc + insomnia, 
   age ~ sex + ms + ss + edu + inc + rc,
   # nothing affects sex in this DAG
   ms ~  age + stress + religion + inc,
   ss ~ stress + edu + sex + inc, 
   edu ~ age + sex, 
   inc ~ edu + sex + rc,
-  stress ~ inc, 
+  stress ~ inc + ms, 
   religion ~ edu,
+  sleep ~ ,
   exposure = "bzd",
   outcome = "anxiety",
   labels = c(
@@ -58,7 +79,9 @@ dag = ggdag::dagify(
     inc = "Income",
     rc = "Region of\nCanada",
     stress = "Stress",
-    religion = "Religion"
+    religion = "Religion",
+    insomnia = "Insomnia",
+    prescriber = "Type of Prescriber\n (GP vs Psychiatrist)"
   )
 ) 
 

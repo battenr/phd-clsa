@@ -34,38 +34,20 @@ lapply(list.files("R/"), function(x) source(paste0("R/", x)))
 
 # Anxiety  ----
 
-# Might have to only say anxiety and BZD is an associational relationship because
+#... Variables ----
+
+# Might have to only say anxiety and BZD is an association relationship because
 # anxiety can cause BZDs, therefore not making the DAG acyclic
 
 dag = ggdag::dagify(
-  anxiety ~ bzd + age + 
-    
-    stress + inc + ,
-  
-    
-    
-    
-    
-    bzd + ms + stress + inc + insomnia, 
-  bzd ~ age + sex
-    
-    prescriber + 
-  
-    
-    
-    
-  
-  
-  bzd ~ age + sex + ms + ss + edu + inc + insomnia, 
-  age ~ sex + ms + ss + edu + inc + rc,
-  # nothing affects sex in this DAG
-  ms ~  age + stress + religion + inc,
-  ss ~ stress + edu + sex + inc, 
-  edu ~ age + sex, 
-  inc ~ edu + sex + rc,
-  stress ~ inc + ms, 
-  religion ~ edu,
-  sleep ~ ,
+  anxiety ~ bzd + age + ms + inc, 
+  bzd ~ age + sex + ms + ss + edu + inc, 
+  # nothing causes age or sex 
+  ms ~ age + stress, 
+  ss ~ stress + inc, 
+  edu ~ age,
+  inc ~ edu + age + sex + ms,
+  stress ~ age + ms + edu + inc,
   exposure = "bzd",
   outcome = "anxiety",
   labels = c(
@@ -76,12 +58,10 @@ dag = ggdag::dagify(
     ms = "Marital\nStatus",
     ss = "Smoking\nStatus",
     edu = "Education",
-    inc = "Income",
-    rc = "Region of\nCanada",
-    stress = "Stress",
-    religion = "Religion",
-    insomnia = "Insomnia",
-    prescriber = "Type of Prescriber\n (GP vs Psychiatrist)"
+    inc = "Total Household\n Income",
+    stress = "Stress"
+    # insomnia = "Insomnia", (assuming anxiety causes insomnia)
+    # prescriber = "Type of Prescriber\n (GP vs Psychiatrist)"
   )
 ) 
 
@@ -95,17 +75,13 @@ dag %>%
 #... Adjustment Set ----
 
 dag %>% 
-  ggdag_adjustment_set()
+  ggdag_adjustment_set(text = FALSE, 
+                       use_labels = "label")
 
 #... Open Paths ----
 
 dag |> 
   ggdag_paths(from = "bzd", to = "anxiety")
-
-#... Colliders ----
-
-dag |> 
-  ggdag_collider()
 
 #... D-seperated ----
 
@@ -114,6 +90,33 @@ dag |>
 
 # Depression  ----
 
+#... Variables ----
+
+dag = ggdag::dagify(
+  depression ~ bzd + ms + inc, 
+  bzd ~ age + sex + ms + ss + edu + inc, 
+  # nothing causes age or sex 
+  ms ~ age + stress, 
+  ss ~ stress + inc, 
+  edu ~ age,
+  inc ~ edu + age + sex + ms,
+  stress ~ age + ms + edu + inc,
+  exposure = "bzd",
+  outcome = "depression",
+  labels = c(
+    depression = "Depression",
+    bzd = "Benzodiazepine\nUse", 
+    age = "Age",
+    sex = "Sex",
+    ms = "Marital\nStatus",
+    ss = "Smoking\nStatus",
+    edu = "Education",
+    inc = "Total Household\n Income",
+    stress = "Stress"
+    # insomnia = "Insomnia", (assuming anxiety causes insomnia)
+    # prescriber = "Type of Prescriber\n (GP vs Psychiatrist)"
+  )
+) 
 
 
 #... Draw DAG ----
@@ -123,22 +126,228 @@ dag %>%
                text = FALSE,
                use_labels = "label")
 
+#... Adjustment Set ----
+
+dag %>% 
+  ggdag_adjustment_set(text = FALSE, 
+                       use_labels = "label")
+
 # Diabetes Mellitus  ----
+
+#... Variables ----
+
+ag = ggdag::dagify(
+  diabetes ~ bzd + age + weight_gain,
+  
+  
+  
+  
+  overweight ~ nutrition + inc , 
+  
+  
+  
+  
+  
+  
+  diabetes ~ bzd + ms + inc, 
+  bzd ~ age + sex + ms + ss + edu + inc, 
+  # nothing causes age or sex 
+  ms ~ age + stress, 
+  ss ~ stress + inc, 
+  edu ~ age,
+  inc ~ edu + age + sex + ms,
+  stress ~ age + ms + edu + inc,
+  exposure = "bzd",
+  outcome = "diabetes",
+  labels = c(
+    diabetes = "Diabetes\nMellitus",
+    bzd = "Benzodiazepine\nUse", 
+    age = "Age",
+    sex = "Sex",
+    ms = "Marital\nStatus",
+    ss = "Smoking\nStatus",
+    edu = "Education",
+    inc = "Total Household\n Income",
+    stress = "Stress",
+    weight_gain = "Weight Gain", 
+    diet = "Diet"
+    # insomnia = "Insomnia", (assuming anxiety causes insomnia)
+    # prescriber = "Type of Prescriber\n (GP vs Psychiatrist)"
+  )
+) 
+
+
+#... Draw DAG ----
+
+dag %>% 
+  ggdag::ggdag(layout = "circle", 
+               text = FALSE,
+               use_labels = "label")
+
+#... Adjustment Set ----
+
+dag %>% 
+  ggdag_adjustment_set(text = FALSE, 
+                       use_labels = "label")
 
 # High Blood Pressure  ----
 
+#... Variables ----
+
+
+#... Draw DAG ----
+
+dag %>% 
+  ggdag::ggdag(layout = "circle", 
+               text = FALSE,
+               use_labels = "label")
+
+#... Adjustment Set ----
+
+dag %>% 
+  ggdag_adjustment_set(text = FALSE, 
+                       use_labels = "label")
+
 # Myocardial Infarction  ----
+
+#... Variables ----
+
+
+#... Draw DAG ----
+
+dag %>% 
+  ggdag::ggdag(layout = "circle", 
+               text = FALSE,
+               use_labels = "label")
+
+#... Adjustment Set ----
+
+dag %>% 
+  ggdag_adjustment_set(text = FALSE, 
+                       use_labels = "label")
 
 # Stroke  ----
 
+#... Variables ----
+
+
+#... Draw DAG ----
+
+dag %>% 
+  ggdag::ggdag(layout = "circle", 
+               text = FALSE,
+               use_labels = "label")
+
+#... Adjustment Set ----
+
+dag %>% 
+  ggdag_adjustment_set(text = FALSE, 
+                       use_labels = "label")
+
 # Cancer  ----
+
+#... Variables ----
+
+
+#... Draw DAG ----
+
+dag %>% 
+  ggdag::ggdag(layout = "circle", 
+               text = FALSE,
+               use_labels = "label")
+
+#... Adjustment Set ----
+
+dag %>% 
+  ggdag_adjustment_set(text = FALSE, 
+                       use_labels = "label")
 
 # Heart Disease  ----
 
+#... Variables ----
+
+
+#... Draw DAG ----
+
+dag %>% 
+  ggdag::ggdag(layout = "circle", 
+               text = FALSE,
+               use_labels = "label")
+
+#... Adjustment Set ----
+
+dag %>% 
+  ggdag_adjustment_set(text = FALSE, 
+                       use_labels = "label")
+
 # COPD  ----
+
+#... Variables ----
+
+
+#... Draw DAG ----
+
+dag %>% 
+  ggdag::ggdag(layout = "circle", 
+               text = FALSE,
+               use_labels = "label")
+
+#... Adjustment Set ----
+
+dag %>% 
+  ggdag_adjustment_set(text = FALSE, 
+                       use_labels = "label")
 
 # Dementia  ----
 
+#... Variables ----
+
+
+#... Draw DAG ----
+
+dag %>% 
+  ggdag::ggdag(layout = "circle", 
+               text = FALSE,
+               use_labels = "label")
+
+#... Adjustment Set ----
+
+dag %>% 
+  ggdag_adjustment_set(text = FALSE, 
+                       use_labels = "label")
+
 # Infections  ----
 
+#... Variables ----
+
+
+#... Draw DAG ----
+
+dag %>% 
+  ggdag::ggdag(layout = "circle", 
+               text = FALSE,
+               use_labels = "label")
+
+#... Adjustment Set ----
+
+dag %>% 
+  ggdag_adjustment_set(text = FALSE, 
+                       use_labels = "label")
+
 # Pneumonia  ----
+
+#... Variables ----
+
+
+#... Draw DAG ----
+
+dag %>% 
+  ggdag::ggdag(layout = "circle", 
+               text = FALSE,
+               use_labels = "label")
+
+#... Adjustment Set ----
+
+dag %>% 
+  ggdag_adjustment_set(text = FALSE, 
+                       use_labels = "label")

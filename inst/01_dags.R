@@ -44,7 +44,7 @@ dag = ggdag::dagify(
   bzd ~ age + sex + ms + ss + edu + inc, 
   # nothing causes age or sex 
   ms ~ age + stress, 
-  ss ~ stress + inc, 
+  ss ~ stress + edu + inc, 
   edu ~ age,
   inc ~ edu + age + sex + ms,
   stress ~ age + ms + edu + inc,
@@ -97,7 +97,7 @@ dag = ggdag::dagify(
   bzd ~ age + sex + ms + ss + edu + inc, 
   # nothing causes age or sex 
   ms ~ age + stress, 
-  ss ~ stress + inc, 
+  ss ~ stress + edu + inc, 
   edu ~ age,
   inc ~ edu + age + sex + ms,
   stress ~ age + ms + edu + inc,
@@ -136,27 +136,16 @@ dag %>%
 
 #... Variables ----
 
-ag = ggdag::dagify(
-  diabetes ~ bzd + age + weight_gain,
-  
-  
-  
-  
-  overweight ~ nutrition + inc , 
-  
-  
-  
-  
-  
-  
-  diabetes ~ bzd + ms + inc, 
-  bzd ~ age + sex + ms + ss + edu + inc, 
+dag = ggdag::dagify(
+  diabetes ~ bzd + age + sex + ss + weight_gain,
+  bzd ~ age + sex + ms + ss + edu + inc + depression,
   # nothing causes age or sex 
-  ms ~ age + stress, 
-  ss ~ stress + inc, 
+  ms ~ age, 
+  ss ~ edu + inc, 
   edu ~ age,
   inc ~ edu + age + sex + ms,
-  stress ~ age + ms + edu + inc,
+  depression ~ age + ms + inc, 
+  weight_gain ~ depression + age + sex + ms + edu + inc + ms,
   exposure = "bzd",
   outcome = "diabetes",
   labels = c(
@@ -168,11 +157,8 @@ ag = ggdag::dagify(
     ss = "Smoking\nStatus",
     edu = "Education",
     inc = "Total Household\n Income",
-    stress = "Stress",
-    weight_gain = "Weight Gain", 
-    diet = "Diet"
-    # insomnia = "Insomnia", (assuming anxiety causes insomnia)
-    # prescriber = "Type of Prescriber\n (GP vs Psychiatrist)"
+    weight_gain = "Weight Gain",
+    depression = "Depression"
   )
 ) 
 
@@ -193,6 +179,38 @@ dag %>%
 # High Blood Pressure  ----
 
 #... Variables ----
+
+dag = ggdag::dagify(
+  hbp
+  
+  
+  anxiety ~ bzd + age + ms + inc, 
+  bzd ~ age + sex + ms + ss + edu + inc, 
+  # nothing causes age or sex 
+  ms ~ age + stress, 
+  ss ~ stress + edu + inc, 
+  edu ~ age,
+  inc ~ edu + age + sex + ms,
+  stress ~ age + ms + edu + inc,
+  exposure = "bzd",
+  outcome = "hbp",
+  labels = c(
+    hbp = "high blood pressure", 
+    
+    
+    anxiety = "Anxiety",
+    bzd = "Benzodiazepine\nUse", 
+    age = "Age",
+    sex = "Sex",
+    ms = "Marital\nStatus",
+    ss = "Smoking\nStatus",
+    edu = "Education",
+    inc = "Total Household\n Income",
+    stress = "Stress"
+    # insomnia = "Insomnia", (assuming anxiety causes insomnia)
+    # prescriber = "Type of Prescriber\n (GP vs Psychiatrist)"
+  )
+) 
 
 
 #... Draw DAG ----

@@ -181,7 +181,14 @@ dag %>%
 #... Variables ----
 
 dag = ggdag::dagify(
-  hbp
+  hbp ~ age + sex + ss + overweight + stress,
+  bzd ~ age + sex + ms + ss + edu + inc + depression,
+  
+  
+  
+  
+  overweight ~ depressionn
+  
   
   
   anxiety ~ bzd + age + ms + inc, 
@@ -195,7 +202,7 @@ dag = ggdag::dagify(
   exposure = "bzd",
   outcome = "hbp",
   labels = c(
-    hbp = "high blood pressure", 
+    hbp = "High Blood\n Pressure", 
     
     
     anxiety = "Anxiety",

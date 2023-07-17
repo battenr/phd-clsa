@@ -178,34 +178,24 @@ dag %>%
 
 # High Blood Pressure  ----
 
+# link: https://www.nhs.uk/conditions/high-blood-pressure-hypertension/causes/
+
 #... Variables ----
 
 dag = ggdag::dagify(
-  hbp ~ age + sex + ss + overweight + stress,
-  bzd ~ age + sex + ms + ss + edu + inc + depression,
-  
-  
-  
-  
-  overweight ~ depressionn
-  
-  
-  
-  anxiety ~ bzd + age + ms + inc, 
-  bzd ~ age + sex + ms + ss + edu + inc, 
+  hbp ~ age + sex + ss + stress, #+ overweight,
+  bzd ~ age + sex + ms + ss + edu + inc + stress,
   # nothing causes age or sex 
   ms ~ age + stress, 
   ss ~ stress + edu + inc, 
   edu ~ age,
   inc ~ edu + age + sex + ms,
   stress ~ age + ms + edu + inc,
+  #overweight ~ age + sex + ms + edu + inc,
   exposure = "bzd",
   outcome = "hbp",
   labels = c(
     hbp = "High Blood\n Pressure", 
-    
-    
-    anxiety = "Anxiety",
     bzd = "Benzodiazepine\nUse", 
     age = "Age",
     sex = "Sex",
@@ -213,7 +203,8 @@ dag = ggdag::dagify(
     ss = "Smoking\nStatus",
     edu = "Education",
     inc = "Total Household\n Income",
-    stress = "Stress"
+    stress = "Stress",
+    overweight = "Overweight"
     # insomnia = "Insomnia", (assuming anxiety causes insomnia)
     # prescriber = "Type of Prescriber\n (GP vs Psychiatrist)"
   )

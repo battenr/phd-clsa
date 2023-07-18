@@ -228,6 +228,35 @@ dag %>%
 
 #... Variables ----
 
+dag = ggdag::dagify(
+  mi ~ age + sex + ss + stress + overweight + hbp,
+  bzd ~ age + sex + ms + ss + edu + inc + stress,
+  # nothing causes age or sex 
+  ms ~ age + stress, 
+  ss ~ stress + edu + inc, 
+  edu ~ age,
+  inc ~ edu + age + sex + ms,
+  stress ~ age + ms + edu + inc,
+  overweight ~ age + sex + ms + edu + inc,
+  hbp ~ overweight + stress + ss + sex
+  exposure = "bzd",
+  outcome = "mi",
+  labels = c(
+    mi = "Myocardial\nInfarction", 
+    bzd = "Benzodiazepine\nUse", 
+    age = "Age",
+    sex = "Sex",
+    ms = "Marital\nStatus",
+    ss = "Smoking\nStatus",
+    edu = "Education",
+    inc = "Total Household\n Income",
+    stress = "Stress",
+    overweight = "Overweight",
+    hbp = "High Blood Pressure"
+    # insomnia = "Insomnia", (assuming anxiety causes insomnia)
+    # prescriber = "Type of Prescriber\n (GP vs Psychiatrist)"
+  )
+) 
 
 #... Draw DAG ----
 
@@ -245,6 +274,38 @@ dag %>%
 # Stroke  ----
 
 #... Variables ----
+
+dag = ggdag::dagify(
+  stroke ~ age + sex + ss + stress + overweight + hbp,
+  bzd ~ age + sex + ms + ss + edu + inc + stress,
+  # nothing causes age or sex 
+  ms ~ age + stress, 
+  ss ~ stress + edu + inc, 
+  edu ~ age,
+  inc ~ edu + age + sex + ms,
+  stress ~ age + ms + edu + inc,
+  overweight ~ age + sex + ms + edu + inc,
+  hbp ~ overweight + stress + ss + sex, 
+  exposure = "bzd",
+  outcome = "stroke",
+  labels = c(
+    stroke = "Stroke", 
+    bzd = "Benzodiazepine\nUse", 
+    age = "Age",
+    sex = "Sex",
+    ms = "Marital\nStatus",
+    ss = "Smoking\nStatus",
+    edu = "Education",
+    inc = "Total Household\n Income",
+    stress = "Stress",
+    overweight = "Overweight",
+    hbp = "High Blood\nPressure"
+    # cvd = "Cardiovascular\nDisease"
+    # insomnia = "Insomnia", (assuming anxiety causes insomnia)
+    # prescriber = "Type of Prescriber\n (GP vs Psychiatrist)"
+  )
+) 
+
 
 
 #... Draw DAG ----
@@ -264,23 +325,41 @@ dag %>%
 
 #... Variables ----
 
-
-#... Draw DAG ----
-
-dag %>% 
-  ggdag::ggdag(layout = "circle", 
-               text = FALSE,
-               use_labels = "label")
-
-#... Adjustment Set ----
-
-dag %>% 
-  ggdag_adjustment_set(text = FALSE, 
-                       use_labels = "label")
+# Can only do associational odds ratios. Too complicated 
 
 # Heart Disease  ----
 
 #... Variables ----
+
+dag = ggdag::dagify(
+  cvd ~ age + sex + ss + stress + overweight + hbp,
+  bzd ~ age + sex + ms + ss + edu + inc + stress,
+  # nothing causes age or sex 
+  ms ~ age + stress, 
+  ss ~ stress + edu + inc, 
+  edu ~ age,
+  inc ~ edu + age + sex + ms,
+  stress ~ age + ms + edu + inc,
+  overweight ~ age + sex + ms + edu + inc,
+  hbp ~ overweight + stress + ss + sex
+  exposure = "bzd",
+  outcome = "cvd",
+  labels = c(
+    cvd = "Heart\nDisease", 
+    bzd = "Benzodiazepine\nUse", 
+    age = "Age",
+    sex = "Sex",
+    ms = "Marital\nStatus",
+    ss = "Smoking\nStatus",
+    edu = "Education",
+    inc = "Total Household\n Income",
+    stress = "Stress",
+    overweight = "Overweight",
+    hbp = "High Blood Pressure"
+    # insomnia = "Insomnia", (assuming anxiety causes insomnia)
+    # prescriber = "Type of Prescriber\n (GP vs Psychiatrist)"
+  )
+) 
 
 
 #... Draw DAG ----
@@ -300,6 +379,36 @@ dag %>%
 
 #... Variables ----
 
+dag = ggdag::dagify(
+  copd ~ age + sex + ss + overweight + rural,
+  bzd ~ age + sex + ms + ss + edu + inc + rural,
+  # nothing causes age or sex 
+  ms ~ age + stress, 
+  ss ~ stress + edu + inc, 
+  edu ~ age,
+  inc ~ edu + age + sex + ms,
+  stress ~ age + ms + edu + inc,
+  overweight ~ age + sex + ms + edu + inc,
+  rural ~ age + sex + inc + ms, 
+  exposure = "bzd",
+  outcome = "copd",
+  labels = c(
+    copd = "COPD", 
+    bzd = "Benzodiazepine\nUse", 
+    age = "Age",
+    sex = "Sex",
+    ms = "Marital\nStatus",
+    ss = "Smoking\nStatus",
+    edu = "Education",
+    inc = "Total Household\n Income",
+    stress = "Stress",
+    overweight = "Overweight",
+    rural = "Living in \nRural Area" # this may be tricky. May not actually be rural that causes
+    # COPD but rather undiagnosed or something
+    # insomnia = "Insomnia", (assuming anxiety causes insomnia)
+    # prescriber = "Type of Prescriber\n (GP vs Psychiatrist)"
+  )
+) 
 
 #... Draw DAG ----
 
@@ -318,6 +427,38 @@ dag %>%
 
 #... Variables ----
 
+dag = ggdag::dagify(
+  dementia ~ age + ss + hbp + diabetes + overweight + stress,
+  bzd ~ age + sex + ms + ss + edu + inc + stress,
+  # nothing causes age or sex 
+  ms ~ age + stress, 
+  ss ~ stress + edu + inc, 
+  edu ~ age,
+  inc ~ edu + age + sex + ms,
+  stress ~ age + ms + edu + inc,
+  overweight ~ age + sex + ms + edu + inc,
+  diabetes ~ overweight + age + sex + inc,
+  hbp ~ overweight + stress + ss + sex,
+  exposure = "bzd",
+  outcome = "dementia",
+  labels = c(
+    dementia = "Dementia", 
+    bzd = "Benzodiazepine\nUse", 
+    age = "Age",
+    sex = "Sex",
+    ms = "Marital\nStatus",
+    ss = "Smoking\nStatus",
+    edu = "Education",
+    inc = "Total Household\n Income",
+    stress = "Stress",
+    overweight = "Overweight",
+    hbp = "High Blood Pressure"
+    # this may be tricky. May not actually be rural that causes
+    # COPD but rather undiagnosed or something
+    # insomnia = "Insomnia", (assuming anxiety causes insomnia)
+    # prescriber = "Type of Prescriber\n (GP vs Psychiatrist)"
+  )
+) 
 
 #... Draw DAG ----
 
@@ -337,6 +478,7 @@ dag %>%
 #... Variables ----
 
 
+
 #... Draw DAG ----
 
 dag %>% 
@@ -354,6 +496,38 @@ dag %>%
 
 #... Variables ----
 
+dag = ggdag::dagify(
+  pneumonia ~ age + ss + overweight, # need to lookup more risk factors
+  bzd ~ age + sex + ms + ss + edu + inc + stress,
+  # nothing causes age or sex 
+  ms ~ age + stress, 
+  ss ~ stress + edu + inc, 
+  edu ~ age,
+  inc ~ edu + age + sex + ms,
+  stress ~ age + ms + edu + inc,
+  overweight ~ age + sex + ms + edu + inc,
+  # diabetes ~ overweight + age + sex + inc,
+  # hbp ~ overweight + stress + ss + sex,
+  exposure = "bzd",
+  outcome = "pneumonia",
+  labels = c(
+    pneumonia = "Pneumonia", 
+    bzd = "Benzodiazepine\nUse", 
+    age = "Age",
+    sex = "Sex",
+    ms = "Marital\nStatus",
+    ss = "Smoking\nStatus",
+    edu = "Education",
+    inc = "Total Household\n Income",
+    stress = "Stress",
+    overweight = "Overweight",
+    hbp = "High Blood Pressure"
+    # this may be tricky. May not actually be rural that causes
+    # COPD but rather undiagnosed or something
+    # insomnia = "Insomnia", (assuming anxiety causes insomnia)
+    # prescriber = "Type of Prescriber\n (GP vs Psychiatrist)"
+  )
+) 
 
 #... Draw DAG ----
 

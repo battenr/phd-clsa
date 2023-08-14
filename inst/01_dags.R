@@ -34,7 +34,7 @@ lapply(list.files("R/"), function(x) source(paste0("R/", x)))
 
 # Anxiety  ----
 
-#... Variables ----
+#... Variables 
 
 # Might have to only say anxiety and BZD is an association relationship because
 # anxiety can cause BZDs, therefore not making the DAG acyclic
@@ -65,42 +65,46 @@ dag = ggdag::dagify(
   )
 ) 
 
-#... Draw DAG ----
+#... Draw DAG 
 
 dag %>% 
   ggdag::ggdag(layout = "circle", 
                text = FALSE,
                use_labels = "label")
 
-#... Adjustment Set ----
+#... Adjustment Set 
 
 dag %>% 
   ggdag_adjustment_set(text = FALSE, 
                        use_labels = "label")
 
-#... Open Paths ----
+#... Open Paths 
 
 dag |> 
   ggdag_paths(from = "bzd", to = "anxiety")
 
-#... D-seperated ----
+#... D-seperated 
 
 # dag |> 
 #   ggdag::ggdag_dseparated(controlling_for = "age")
 
 # Depression  ----
 
-#... Variables ----
+#... Variables 
+
+# Need to decide if we will include stress. Does stress cause BZD use? 
+# Debatable, good idea to ask committee. Stress -> anxiety -> BZD? or 
+# Stress -> BZD?
 
 dag = ggdag::dagify(
-  depression ~ bzd + ms + inc, 
-  bzd ~ age + sex + ms + ss + edu + inc, 
+  depression ~ bzd + ms + inc + age, # + stress, 
+  bzd ~ age + sex + ms + ss + edu + inc, # + stress, 
   # nothing causes age or sex 
   ms ~ age + stress, 
   ss ~ stress + edu + inc, 
   edu ~ age,
   inc ~ edu + age + sex + ms,
-  stress ~ age + ms + edu + inc,
+  #stress ~ age + ms + edu + inc,
   exposure = "bzd",
   outcome = "depression",
   labels = c(
@@ -111,22 +115,22 @@ dag = ggdag::dagify(
     ms = "Marital\nStatus",
     ss = "Smoking\nStatus",
     edu = "Education",
-    inc = "Total Household\n Income",
-    stress = "Stress"
+    inc = "Total Household\n Income"#,
+    #stress = "Stress"
     # insomnia = "Insomnia", (assuming anxiety causes insomnia)
     # prescriber = "Type of Prescriber\n (GP vs Psychiatrist)"
   )
 ) 
 
 
-#... Draw DAG ----
+#... Draw DAG 
 
 dag %>% 
   ggdag::ggdag(layout = "circle", 
                text = FALSE,
                use_labels = "label")
 
-#... Adjustment Set ----
+#... Adjustment Set 
 
 dag %>% 
   ggdag_adjustment_set(text = FALSE, 
@@ -134,18 +138,18 @@ dag %>%
 
 # Diabetes Mellitus  ----
 
-#... Variables ----
+#... Variables 
 
 dag = ggdag::dagify(
   diabetes ~ bzd + age + sex + ss + weight_gain,
-  bzd ~ age + sex + ms + ss + edu + inc + depression,
+  bzd ~ age + sex + ms + ss + edu + inc,
   # nothing causes age or sex 
   ms ~ age, 
   ss ~ edu + inc, 
   edu ~ age,
   inc ~ edu + age + sex + ms,
-  depression ~ age + ms + inc, 
-  weight_gain ~ depression + age + sex + ms + edu + inc + ms,
+  #depression ~ age + ms + inc, 
+  weight_gain ~ age + sex + ms + edu + inc + ms,
   exposure = "bzd",
   outcome = "diabetes",
   labels = c(
@@ -157,20 +161,19 @@ dag = ggdag::dagify(
     ss = "Smoking\nStatus",
     edu = "Education",
     inc = "Total Household\n Income",
-    weight_gain = "Weight Gain",
-    depression = "Depression"
+    weight_gain = "Weight Gain"
   )
 ) 
 
 
-#... Draw DAG ----
+#... Draw DAG 
 
 dag %>% 
   ggdag::ggdag(layout = "circle", 
                text = FALSE,
                use_labels = "label")
 
-#... Adjustment Set ----
+#... Adjustment Set 
 
 dag %>% 
   ggdag_adjustment_set(text = FALSE, 
@@ -180,18 +183,24 @@ dag %>%
 
 # link: https://www.nhs.uk/conditions/high-blood-pressure-hypertension/causes/
 
-#... Variables ----
+# Can stress even be included? It's not well defined 
+
+#... Variables 
+
+# Note: don't need to include stress or anxiety b/c they aren't common causes
 
 dag = ggdag::dagify(
-  hbp ~ age + sex + ss + stress, #+ overweight,
-  bzd ~ age + sex + ms + ss + edu + inc + stress,
+  hbp ~ anxiety + age + sex + ss, # + stress, #+ overweight,
+  bzd ~ age + sex + ms + ss + edu + inc + anxiety, # + anxiety,
   # nothing causes age or sex 
-  ms ~ age + stress, 
-  ss ~ stress + edu + inc, 
+  ms ~ age, #+ stress, 
+  ss ~ edu + inc, # + stress, 
   edu ~ age,
   inc ~ edu + age + sex + ms,
-  stress ~ age + ms + edu + inc,
+  #stress ~ age + ms + edu + inc,
   #overweight ~ age + sex + ms + edu + inc,
+  #anxiety ~ stress + ms + inc,
+  anxiety ~ age + ms + inc,
   exposure = "bzd",
   outcome = "hbp",
   labels = c(
@@ -202,23 +211,23 @@ dag = ggdag::dagify(
     ms = "Marital\nStatus",
     ss = "Smoking\nStatus",
     edu = "Education",
-    inc = "Total Household\n Income",
-    stress = "Stress",
-    overweight = "Overweight"
+    inc = "Total Household\n Income"#,
+    #stress = "Stress",
+    #overweight = "Overweight",
+    #anxiety = "Anxiety"
     # insomnia = "Insomnia", (assuming anxiety causes insomnia)
     # prescriber = "Type of Prescriber\n (GP vs Psychiatrist)"
   )
 ) 
 
-
-#... Draw DAG ----
+#... Draw DAG 
 
 dag %>% 
   ggdag::ggdag(layout = "circle", 
                text = FALSE,
                use_labels = "label")
 
-#... Adjustment Set ----
+#... Adjustment Set 
 
 dag %>% 
   ggdag_adjustment_set(text = FALSE, 
@@ -226,19 +235,20 @@ dag %>%
 
 # Myocardial Infarction  ----
 
-#... Variables ----
+#... Variables 
 
 dag = ggdag::dagify(
-  mi ~ age + sex + ss + stress + overweight + hbp,
-  bzd ~ age + sex + ms + ss + edu + inc + stress,
+  mi ~ bzd + age + sex + ss + hbp + anxiety, #stress + overweight + hbp,
+  bzd ~ age + sex + ms + ss + edu + inc + anxiety, # + stress,
   # nothing causes age or sex 
-  ms ~ age + stress, 
-  ss ~ stress + edu + inc, 
+  ms ~ age, # + stress, 
+  ss ~ edu + inc, #stress + edu + inc, 
   edu ~ age,
   inc ~ edu + age + sex + ms,
-  stress ~ age + ms + edu + inc,
-  overweight ~ age + sex + ms + edu + inc,
-  hbp ~ overweight + stress + ss + sex
+  #stress ~ age + ms + edu + inc,
+  #overweight ~ age + sex + ms + edu + inc,
+  hbp ~ anxiety + age + sex + ss,
+  anxiety ~ age + ms + inc,
   exposure = "bzd",
   outcome = "mi",
   labels = c(
@@ -250,22 +260,23 @@ dag = ggdag::dagify(
     ss = "Smoking\nStatus",
     edu = "Education",
     inc = "Total Household\n Income",
-    stress = "Stress",
-    overweight = "Overweight",
+    anxiety = "Anxiety",
+    #stress = "Stress",
+    #overweight = "Overweight",
     hbp = "High Blood Pressure"
     # insomnia = "Insomnia", (assuming anxiety causes insomnia)
     # prescriber = "Type of Prescriber\n (GP vs Psychiatrist)"
   )
 ) 
 
-#... Draw DAG ----
+#... Draw DAG 
 
 dag %>% 
   ggdag::ggdag(layout = "circle", 
                text = FALSE,
                use_labels = "label")
 
-#... Adjustment Set ----
+#... Adjustment Set 
 
 dag %>% 
   ggdag_adjustment_set(text = FALSE, 
@@ -273,19 +284,19 @@ dag %>%
 
 # Stroke  ----
 
-#... Variables ----
+#... Variables 
 
 dag = ggdag::dagify(
-  stroke ~ age + sex + ss + stress + overweight + hbp,
-  bzd ~ age + sex + ms + ss + edu + inc + stress,
+  stroke ~ age + sex + ss + hbp,
+  bzd ~ age + sex + ms + ss + edu + inc, # + stress,
   # nothing causes age or sex 
   ms ~ age + stress, 
   ss ~ stress + edu + inc, 
   edu ~ age,
   inc ~ edu + age + sex + ms,
-  stress ~ age + ms + edu + inc,
-  overweight ~ age + sex + ms + edu + inc,
-  hbp ~ overweight + stress + ss + sex, 
+  # stress ~ age + ms + edu + inc,
+  hbp ~ anxiety + age + sex + ss,
+  anxiety ~ bzd + age + ms + inc,
   exposure = "bzd",
   outcome = "stroke",
   labels = c(
@@ -297,9 +308,8 @@ dag = ggdag::dagify(
     ss = "Smoking\nStatus",
     edu = "Education",
     inc = "Total Household\n Income",
-    stress = "Stress",
-    overweight = "Overweight",
-    hbp = "High Blood\nPressure"
+    hbp = "High Blood\nPressure",
+    anxiety = "Anxiety"
     # cvd = "Cardiovascular\nDisease"
     # insomnia = "Insomnia", (assuming anxiety causes insomnia)
     # prescriber = "Type of Prescriber\n (GP vs Psychiatrist)"
@@ -308,14 +318,14 @@ dag = ggdag::dagify(
 
 
 
-#... Draw DAG ----
+#... Draw DAG 
 
 dag %>% 
   ggdag::ggdag(layout = "circle", 
                text = FALSE,
                use_labels = "label")
 
-#... Adjustment Set ----
+#... Adjustment Set 
 
 dag %>% 
   ggdag_adjustment_set(text = FALSE, 
@@ -323,13 +333,13 @@ dag %>%
 
 # Cancer  ----
 
-#... Variables ----
+#... Variables 
 
 # Can only do associational odds ratios. Too complicated 
 
 # Heart Disease  ----
 
-#... Variables ----
+#... Variables 
 
 dag = ggdag::dagify(
   cvd ~ age + sex + ss + stress + overweight + hbp,
@@ -362,14 +372,14 @@ dag = ggdag::dagify(
 ) 
 
 
-#... Draw DAG ----
+#... Draw DAG 
 
 dag %>% 
   ggdag::ggdag(layout = "circle", 
                text = FALSE,
                use_labels = "label")
 
-#... Adjustment Set ----
+#... Adjustment Set 
 
 dag %>% 
   ggdag_adjustment_set(text = FALSE, 
@@ -377,9 +387,13 @@ dag %>%
 
 # COPD  ----
 
-#... Variables ----
+#... Variables 
 
 dag = ggdag::dagify(
+  
+  
+  
+  
   copd ~ age + sex + ss + overweight + rural,
   bzd ~ age + sex + ms + ss + edu + inc + rural,
   # nothing causes age or sex 
@@ -410,14 +424,14 @@ dag = ggdag::dagify(
   )
 ) 
 
-#... Draw DAG ----
+#... Draw DAG 
 
 dag %>% 
   ggdag::ggdag(layout = "circle", 
                text = FALSE,
                use_labels = "label")
 
-#... Adjustment Set ----
+#... Adjustment Set 
 
 dag %>% 
   ggdag_adjustment_set(text = FALSE, 
@@ -425,7 +439,7 @@ dag %>%
 
 # Dementia  ----
 
-#... Variables ----
+#... Variables 
 
 dag = ggdag::dagify(
   dementia ~ age + ss + hbp + diabetes + overweight + stress,
@@ -460,14 +474,14 @@ dag = ggdag::dagify(
   )
 ) 
 
-#... Draw DAG ----
+#... Draw DAG 
 
 dag %>% 
   ggdag::ggdag(layout = "circle", 
                text = FALSE,
                use_labels = "label")
 
-#... Adjustment Set ----
+#... Adjustment Set 
 
 dag %>% 
   ggdag_adjustment_set(text = FALSE, 
@@ -475,18 +489,18 @@ dag %>%
 
 # Infections  ----
 
-#... Variables ----
+#... Variables 
 
 
 
-#... Draw DAG ----
+#... Draw DAG 
 
 dag %>% 
   ggdag::ggdag(layout = "circle", 
                text = FALSE,
                use_labels = "label")
 
-#... Adjustment Set ----
+#... Adjustment Set 
 
 dag %>% 
   ggdag_adjustment_set(text = FALSE, 
@@ -494,7 +508,7 @@ dag %>%
 
 # Pneumonia  ----
 
-#... Variables ----
+#... Variables 
 
 dag = ggdag::dagify(
   pneumonia ~ age + ss + overweight, # need to lookup more risk factors
@@ -529,14 +543,14 @@ dag = ggdag::dagify(
   )
 ) 
 
-#... Draw DAG ----
+#... Draw DAG 
 
 dag %>% 
   ggdag::ggdag(layout = "circle", 
                text = FALSE,
                use_labels = "label")
 
-#... Adjustment Set ----
+#... Adjustment Set 
 
 dag %>% 
   ggdag_adjustment_set(text = FALSE, 

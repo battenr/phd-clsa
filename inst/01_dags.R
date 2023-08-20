@@ -342,16 +342,17 @@ dag %>%
 #... Variables 
 
 dag = ggdag::dagify(
-  cvd ~ age + sex + ss + stress + overweight + hbp,
-  bzd ~ age + sex + ms + ss + edu + inc + stress,
+  cvd ~ bzd + age + sex + ss + hbp, # + anxiety, (can anxiety cause CVD?)
+  bzd ~ age + sex + ms + ss + edu + inc + anxiety, 
   # nothing causes age or sex 
-  ms ~ age + stress, 
-  ss ~ stress + edu + inc, 
+  ms ~ age, # + stress, 
+  ss ~ edu + inc, #stress + edu + inc, 
   edu ~ age,
   inc ~ edu + age + sex + ms,
-  stress ~ age + ms + edu + inc,
-  overweight ~ age + sex + ms + edu + inc,
-  hbp ~ overweight + stress + ss + sex
+  #stress ~ age + ms + edu + inc,
+  #overweight ~ age + sex + ms + edu + inc,
+  hbp ~ anxiety + age + sex + ss,
+  #anxiety ~ age + ms + inc,
   exposure = "bzd",
   outcome = "cvd",
   labels = c(
@@ -390,10 +391,6 @@ dag %>%
 #... Variables 
 
 dag = ggdag::dagify(
-  
-  
-  
-  
   copd ~ age + sex + ss + overweight + rural,
   bzd ~ age + sex + ms + ss + edu + inc + rural,
   # nothing causes age or sex 
@@ -438,6 +435,8 @@ dag %>%
                        use_labels = "label")
 
 # Dementia  ----
+
+# I don't think dementia is available in the CLSA data 
 
 #... Variables 
 

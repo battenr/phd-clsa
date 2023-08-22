@@ -391,7 +391,7 @@ dag %>%
 #... Variables 
 
 dag = ggdag::dagify(
-  copd ~ age + sex + ss + overweight + rural,
+  copd ~ age + sex + ss + overweight,
   bzd ~ age + sex + ms + ss + edu + inc + rural,
   # nothing causes age or sex 
   ms ~ age + stress, 

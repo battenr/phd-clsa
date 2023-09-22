@@ -10,5 +10,6 @@
 !*DESCRIPTION
 !*NAMESPACE
 !inst/
+!R/
 .Rproj.user
 

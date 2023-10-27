@@ -8,12 +8,13 @@
 
 library(tidyverse)
 library(janitor)
+library(readxl)
 
 #... Functions ----
 
 # Load all functions
 
-lapply(list.files("R/"), function(x) source(paste0("R/", x)))
+# lapply(list.files("R/"), function(x) source(paste0("R/", x)))
 
 #... Dependencies ----
 
@@ -21,4 +22,7 @@ lapply(list.files("R/"), function(x) source(paste0("R/", x)))
 
 dat <- read_csv(file = "data/2206009_MemorialUniversity_GMugford_Baseline_CoPv7.csv") %>% 
   janitor::clean_names()
+
+
+
 

@@ -10,6 +10,7 @@ source("inst/00_loading_data.R")
 # Covariates associated with BZD use: 
 # age, sex, marital status, smoking status, education, income, region of canada
 
+dat |> count(sdc_urban_rural_com)
 
 dat_var <- dat %>% 
   dplyr::select(
@@ -28,7 +29,8 @@ dat_var <- dat %>%
     icq_smoke_com, # smoking status (what is your current smoking status?)
     ed_high_com,  # highest level of education completed
     ed_high_otsp_com, # highest education - other, please specify
-    inc_tot_com# income (total household income)
+    inc_tot_com,# income (total household income)
+    sdc_urban_rural_com # urban/rural status
   ) %>% 
   dplyr::mutate(
     entity_id = as.character(entity_id) 
@@ -107,6 +109,14 @@ dat_output = dat_var %>%
     senior = dplyr::case_when(
       age_nmbr >= 65 ~ "yes",
       age_nmbr < 65 ~ "no"
+    ),
+    urban_rural_classification = dplyr::case_when(
+      sdc_urban_rural == 0 ~ "Rural", 
+      sdc_urban_rural == 1 ~ "Urban core",
+      sdc_urban_rural == 2 ~ "Urban fringe",
+      sdc_urban_rural == 4 ~ "Urban population centre outside CMA and CA",
+      sdc_urban_rural == 6 ~ "Secondary core",
+      sdc_urban_rural == 9 ~ "Postal code link to dissemination area"
     )
   ) %>% 
   dplyr::select(
@@ -114,8 +124,6 @@ dat_output = dat_var %>%
   )
 
 # Adding names to variables ----
-
-
 
 df_output <- dat_output %>% 
   select(
@@ -131,7 +139,8 @@ df_output <- dat_output %>%
     marital_status, 
     smoking_status, 
     edu_high, 
-    total_income
+    total_income,
+    urban_rural_classification
   )
 
 vars <- df_output %>% colnames()
@@ -149,7 +158,8 @@ var_names <- c(
   "Current marital status",
   "Smoking status", 
   "Education - highest degree",
-  "Total household income"
+  "Total household income",
+  "Urban/Rural Classification"
 )
 
 dat_output %>% colnames()

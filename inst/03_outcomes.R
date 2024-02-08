@@ -77,60 +77,83 @@ df_outcomes <- dat %>%
   
   dplyr::mutate(
     anxiety = dplyr::case_when(
-      ccc_anxi_com == 1 ~ "yes", 
-      ccc_anxi_com != 1 ~ "no"
+      ccc_anxi_com == 1 ~ "Yes", 
+      ccc_anxi_com == 2 ~ "No",
+      ccc_anxi_com == 8 ~ "Don't know or No answer",
+      ccc_anxi_com == 9 ~ "Refused"
     ),
     
    depression = dplyr::case_when(
-     dpr_clindep_com == 1 ~ "yes", 
-     dpr_clindep_com != 1 ~ "no"
+     dpr_clindep_com == 1 ~ "Yes", 
+     dpr_clindep_com == 2 ~ "No",
+     dpr_clindep_com == 8 ~ "Don't know or No answer",
+     dpr_clindep_com == 9 ~ "Refused"
     ),
     
-    diabetes_mellitus = dplyr::case_when(
-      dia_type_com == 2 ~ "yes", 
-      dia_type_com != 2 ~ "no"
+    diabetes_type = dplyr::case_when(
+      dia_type_com == 1 ~ "Type I", 
+      dia_type_com == 2 ~ "Type II",
+      dia_type_com == 3 ~ "Neither",
+      dia_type_com == 8 ~ "Don't know or No answer",
+      dia_type_com == 9 ~ "Refused"
     ),
    
    hbp = dplyr::case_when(
-     ccc_hbp_com == 1 ~ "yes", 
-     ccc_hbp_com != 1 ~ "no"
+     ccc_hbp_com == 1 ~ "Yes", 
+     ccc_hbp_com == 2 ~ "No",
+     ccc_hbp_com == 8 ~ "Don't know or No answer",
+     ccc_hbp_com == 9 ~ "Refused"
    ),
    
    mi = dplyr::case_when(
-     ccc_ami_com == 1 ~ "yes",
-     ccc_ami_com != 1 ~ "no"
+     ccc_ami_com == 1 ~ "Yes", 
+     ccc_ami_com == 2 ~ "No",
+     ccc_ami_com == 8 ~ "Don't know or No answer",
+     ccc_ami_com == 9 ~ "Refused"
    ),
    
    # ccc_cva_com
    
    stroke = dplyr::case_when(
-     ccc_cva_com == 1 ~ "yes",
-     ccc_cva_com != 1 ~ "no"
+     ccc_cva_com == 1 ~ "Yes", 
+     ccc_cva_com == 2 ~ "No",
+     ccc_cva_com == 8 ~ "Don't know or No answer",
+     ccc_cva_com == 9 ~ "Refused"
    ),
    
    cancer = dplyr::case_when(
-     ccc_canc_com == 1 ~ "yes",
-     ccc_canc_com != 1 ~ "no"
+     ccc_canc_com == 1 ~ "Yes", 
+     ccc_canc_com == 2 ~ "No",
+     ccc_canc_com == 8 ~ "Don't know or No answer",
+     ccc_canc_com == 9 ~ "Refused"
    ),
    
    heart_disease = dplyr::case_when(
-     ccc_heart_com == 1 ~ "yes",
-     ccc_heart_com != 1 ~ "no"
+     ccc_heart_com == 1 ~ "Yes", 
+     ccc_heart_com == 2 ~ "No",
+     ccc_heart_com == 8 ~ "Don't know or No answer",
+     ccc_heart_com == 9 ~ "Refused"
    ),
    
    copd = dplyr::case_when(
-     ccc_copd_com == 1 ~ "yes",
-     ccc_copd_com != 1 ~ "no"
+     ccc_copd_com == 1 ~ "Yes", 
+     ccc_copd_com == 2 ~ "No",
+     ccc_copd_com == 8 ~ "Don't know or No answer",
+     ccc_copd_com == 9 ~ "Refused"
    ),
    
    dementia = dplyr::case_when(
-     ccc_alzh_com == 1 ~ "yes",
-     ccc_alzh_com != 1 ~ "no"
+     ccc_alzh_com == 1 ~ "Yes", 
+     ccc_alzh_com == 2 ~ "No",
+     ccc_alzh_com == 8 ~ "Don't know or No answer",
+     ccc_alzh_com == 9 ~ "Refused"
    ),
    
   pneumonia = dplyr::case_when(
-    ccc_drpneu_com == 1 ~ "yes",
-    ccc_drpneu_com != 1 ~ "no"
+    ccc_drpneu_com == 1 ~ "Yes", 
+    ccc_drpneu_com == 2 ~ "No",
+    ccc_drpneu_com == 8 ~ "Don't know or No answer",
+    ccc_drpneu_com == 9 ~ "Refused"
   )
     
    
@@ -140,7 +163,7 @@ df_outcomes <- dat %>%
     entity_id,
     anxiety, 
     depression,
-    diabetes_mellitus,
+    diabetes_type,
     hbp, 
     mi, 
     stroke, 

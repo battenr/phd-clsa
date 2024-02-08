@@ -21,13 +21,9 @@ library(flextable)
 
 lapply(list.files("R/"), function(x) source(paste0("R/", x)))
 
-# Descriptive Stats ---
+#... Data ----
 
-# First we need to load our data 
-
-# Data 
-
-load("data/analysis_dataset.Rdata")
+load("data/analytic_dataset.Rdata")
 
 # Survey Design ----
 
@@ -38,70 +34,65 @@ design.infl <- svydesign(data = df,
                          ids = ~1,
                          nest = TRUE)
 
-# Descriptive Analysis ----
+# Overall Cohort ----
 
-#... BZDs ----
+#... Character Variables ----
 
-# svy_count("bzd", design = design.infl, data = df)
-# 
-# 1311/(1311+28786)
-
-# Categorical Variables ----
-
-cat_var <- df |> 
-  dplyr::select(
-    
-    # Selecting all except for participant ID, age (as a number) and weights/geostrata
-    
-    -c(entity_id,
-       age_nmbr, 
-       starts_with("wghts"), 
-       geostrata
-       )
-    ) |> 
-  names()
-
-count_cat = cat_var |> 
+df |> 
+  select(
+    -c(entity_id, age, 
+       contains("wghts"), 
+       geostrata)
+  ) |> names() |> 
   map(
     \(x)svy_count(x, design = design.infl, data = df)
   ) 
 
-names(count_cat) <- cat_var
-
-list2env(count_cat, envir = .GlobalEnv)
+df |> colnames()
 
 
-# Create a new Word document
-doc <- read_docx()
-
-# Loop through each named data frame and add it to the Word doc
-for(name in names(count_cat)) {
-  doc <- doc %>%
-    body_add_flextable(flextable::qflextable(count_cat[[name]])) %>%
-    body_add_break()
-}
-
-# Stratified by BZD Use ----
-
-count_cat = cat_var |> 
-  map(
-    \(x)svy_count(x, design = design.infl, data = df)
-  ) 
-
-
-
-
-
-
-
-
-# Save the document
-print(doc, target = "output/Categorical Variables.docx")
-
-# Continuous Variables ----
-
-# Stratified by BZD Use ----
-
-#... Categorical ----
 
 #... Continuous Variables ----
+
+# Age 
+
+svymean(df$age, design = design.infl) 
+
+# SD
+
+# To calculate SD you need to calculate variance first then take the sqrt()
+
+sqrt(svyvar(df$age, design = design.infl))
+
+# Stratified By BZD ----
+
+df |> 
+  select(
+    -c(entity_id, age)
+  ) |> colnames() |> 
+  map(
+    \(x)svy_countby(x, byvar = "bzd", design = design.infl, data = df)
+  ) 
+
+df |> 
+  select(sex) |> 
+  names() |> 
+  map(
+    \(x)svy_countby(var = x, byvar = "bzd", design = design.infl, data = df)
+  ) 
+
+
+  
+
+df |> 
+  select(
+    -c(entity_id, age, 
+       contains("wghts"), 
+       geostrata)
+  ) |> names() |> 
+  map(
+    \(x)svy_count(x, design = design.infl, data = df)
+  ) 
+
+svy_countby(sex)
+

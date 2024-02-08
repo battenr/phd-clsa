@@ -12,7 +12,7 @@
 svy_countby <- function(var, 
                         byvar = bzd,
                         design = design.infl,
-                        data = dat){
+                        data = df){
   library(tidyverse)
   library(survey)
   

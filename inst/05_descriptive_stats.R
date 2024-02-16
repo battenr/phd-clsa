@@ -101,63 +101,39 @@ sqrt(svyvar(df.na.missing$age, design = design.infl))
 
 # The percentages should equal 100% for the BZD categories (i.e., no should equal 100)
 
-svy_countby(bzd, by = sex, data = df.na.missing) %>% 
-  group_by(sex) %>% 
-  arrange(sex, bzd)
+# Note to self: figure out how to make a function 
 
-svy_countby(bzd, by = province, data = df.na.missing) %>% 
-  group_by(province) %>% 
-  arrange(province, bzd)
+source("R/svy_countby.R")
 
-
-svy_countby(bzd, by = marital_status, data = df.na.missing) %>% 
-  group_by(marital_status) %>% 
-  arrange(marital_status, bzd)
-
-
-svy_countby(bzd, by = smoke, data = df.na.missing) %>% 
-  group_by(smoke) %>% 
-  arrange(smoke, bzd)      
-
-
-svy_countby(bzd, by = education, data = df.na.missing) %>% 
-  group_by(education) %>% 
-  arrange(education, bzd)
+c("sex", 
+  "province",
+  "marital_status",
+  "smoke",
+  "education",
+  "household_income",
+  "urban_rural"
+  ) %>%
+  purrr::map(
+    ~svy_countby(.x, byvar = "bzd", data = df.na.missing) %>% arrange(bzd)
+  )
+   
 
 
-svy_countby(bzd, by = household_income, data = df.na.missing) %>% 
-  group_by(household_income) %>% 
-  arrange(household_income, bzd)
+#... Outcomes ----
 
-svy_countby(bzd, by = urban_rural, data = df.na.missing) %>% 
-  # group_by(urban_rural) %>% 
-  arrange(urban_rural)
-
-
-
-
-
-svy_countby(bzd, by = anxiety, data = df.na.missing) %>% arrange(anxiety)
-
-svy_countby(bzd, by = depression, data = df.na.missing) %>% arrange(depression)
-
-svy_countby(bzd, by = diabetes_mellitus, data = df.na.missing) %>% arrange(diabetes_mellitus)
-
-svy_countby(bzd, by = hbp, data = df.na.missing) %>%  arrange(hbp)
-
-svy_countby(bzd, by = mi, data = df.na.missing) %>% arrange(mi)
-
-svy_countby(bzd, by = stroke, data = df.na.missing) %>% arrange(stroke) 
-
-svy_countby(bzd, by = cancer, data = df.na.missing) %>% arrange(cancer) 
-
-svy_countby(bzd, by = heart_disease, data = df.na.missing) %>% arrange(heart_disease)
-
-svy_countby(bzd, by = copd, data = df.na.missing) %>% arrange(copd) 
-
-svy_countby(bzd, by = dementia, data = df.na.missing) %>% arrange(dementia)
-
-svy_countby(bzd, by = pneumonia, data = df.na.missing) %>% arrange(pneumonia)
-
-
+c("anxiety", 
+  "depression",
+  "diabetes_mellitus",
+  "hbp",
+  "mi", 
+  "stroke",
+  "cancer",
+  "heart_disease",
+  "copd",
+  "dementia",
+  "pneumonia"
+) %>%
+  purrr::map(
+    ~svy_countby(.x, byvar = "bzd", data = df.na.missing) %>% arrange(bzd)
+  )
 

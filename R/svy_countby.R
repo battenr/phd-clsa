@@ -16,10 +16,26 @@ svy_countby <- function(var,
   library(tidyverse)
   library(survey)
   
-  form <- reformulate(as.character(paste0(substitute(var), "+", substitute(byvar))))
+  form <- reformulate(as.character(paste0(var, "+", byvar)))
   
-  var = enquo(var)
-  byvar = enquo(byvar)
+  if (is.character(var)) {
+    var <- rlang::sym(var)
+    var <- rlang::enquo(var)
+  }
+  if (is.character(byvar)) {
+    byvar <- rlang::sym(byvar)
+    byvar <- rlang::enquo(byvar)
+  }
+  
+  # var_sym <- rlang::sym(var)
+  # byvar_sym <- rlang::sym(byvar)
+
+
+  
+  # form <- reformulate(as.character(paste0(substitute(var), "+", substitute(byvar))))
+  # 
+  # var = enquo(var)
+  # byvar = enquo(byvar)
   
   counts <- data %>%
     dplyr::group_by(!!var, !!byvar) %>% 

@@ -1,6 +1,7 @@
-# Title: Regression Analysis for COPD  ----
+# Title: Regression Analysis for Myocardial Infarciton  ----
 
-# Description: regression analysis for COPD ----
+# Description: regression analysis for myocardial infarction ----
+
 
 # Setup ----
 
@@ -22,17 +23,17 @@ source("R/outliers_svy_sa.R")
 
 # Stepwise Regression ----
 
-stepwise_regression(outcome = "depression")
+stepwise_regression(outcome = "mi")
 
 # Model Diagnositics ----
 
 #... Data Setup 
 
-prep = svyglm_checks_prep("depression")
+prep = svyglm_checks_prep("mi")
 
 checks = svyglm_checks(
-  "depression",
-  formula = depression ~ bzd + age + sex + region + marital_status + smoke + income + bzd*age,
+  "mi",
+  formula = mi ~ bzd + age + sex + smoke + income + urban_rural,
   df = prep$`Data with Outcome and Covars`,
   design = prep$`Survey Design`)
 
@@ -45,9 +46,8 @@ checks$`Residuals vs ID`
 # Refitting model due to VIF. Using centered age instead
 
 checks = svyglm_checks(
-  "depression",
-  formula = depression ~ bzd + centered_age + sex + region + marital_status + smoke + 
-    income + bzd*centered_age,
+  "mi",
+  formula = mi ~ bzd + centered_age + sex + smoke + income + urban_rural,
   df = prep$`Data with Outcome and Covars`,
   design = prep$`Survey Design`)
 
@@ -59,7 +59,7 @@ checks$`Residuals vs ID`
 
 #... Viewing Outliers 
 
-prep$`Data with Outcome and Covars` %>%
+prep$`Data with Outcome and Covars` %>% 
   dplyr::filter(
     entity_id %in% checks$`Problematic Outliers`$id
   ) %>% view()
@@ -68,20 +68,19 @@ prep$`Data with Outcome and Covars` %>%
 
 # Using a sensivitiy analysis to check for outliers
 
-outliers_sa(
-  cancer ~ bzd + centered_age + sex + region + smoke + education + centered_age*sex,
-  prep = prep,
-  checks = checks)
+outliers_sa(mi ~ bzd + centered_age + sex + smoke + income + urban_rural,
+            prep = prep,
+            checks = checks)
 
 # Refitted model ----
 
-# NA 
+
+
 
 # Final Model ----
 
 final_model <- svyglm(
-  formula = depression ~ bzd + centered_age + sex + region + marital_status + smoke + 
-    income + bzd*centered_age,
+  mi ~ bzd + centered_age + sex + smoke + income + urban_rural,
   design = prep$`Survey Design`,
   family = stats::binomial(link = "logit")
 )

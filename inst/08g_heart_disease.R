@@ -1,6 +1,6 @@
-# Title: Regression Analysis for COPD  ----
+# Title: Regression Analysis for Heart Disease  ----
 
-# Description: regression analysis for COPD ----
+# Description: regression analysis for heart disease ----
 
 # Setup ----
 
@@ -22,17 +22,17 @@ source("R/outliers_svy_sa.R")
 
 # Stepwise Regression ----
 
-stepwise_regression(outcome = "depression")
+stepwise_regression(outcome = "heart_disease")
 
 # Model Diagnositics ----
 
 #... Data Setup 
 
-prep = svyglm_checks_prep("depression")
+prep = svyglm_checks_prep("heart_disease")
 
 checks = svyglm_checks(
-  "depression",
-  formula = depression ~ bzd + age + sex + region + marital_status + smoke + income + bzd*age,
+  "heart_disease",
+  formula = heart_disease ~ bzd + age + sex + region + smoke + income, 
   df = prep$`Data with Outcome and Covars`,
   design = prep$`Survey Design`)
 
@@ -45,9 +45,8 @@ checks$`Residuals vs ID`
 # Refitting model due to VIF. Using centered age instead
 
 checks = svyglm_checks(
-  "depression",
-  formula = depression ~ bzd + centered_age + sex + region + marital_status + smoke + 
-    income + bzd*centered_age,
+  "heart_disease",
+  heart_disease ~ bzd + centered_age + sex + region + smoke + income,
   df = prep$`Data with Outcome and Covars`,
   design = prep$`Survey Design`)
 
@@ -80,8 +79,7 @@ outliers_sa(
 # Final Model ----
 
 final_model <- svyglm(
-  formula = depression ~ bzd + centered_age + sex + region + marital_status + smoke + 
-    income + bzd*centered_age,
+  heart_disease ~ bzd + centered_age + sex + region + smoke + income,
   design = prep$`Survey Design`,
   family = stats::binomial(link = "logit")
 )

@@ -1,6 +1,6 @@
-# Title: Regression Analysis for COPD  ----
+# Title: Regression Analysis for Cancer  ----
 
-# Description: regression analysis for COPD ----
+# Description: regression analysis for cancer ----
 
 # Setup ----
 
@@ -22,17 +22,17 @@ source("R/outliers_svy_sa.R")
 
 # Stepwise Regression ----
 
-stepwise_regression(outcome = "depression")
+stepwise_regression(outcome = "cancer")
 
 # Model Diagnositics ----
 
 #... Data Setup 
 
-prep = svyglm_checks_prep("depression")
+prep = svyglm_checks_prep("cancer")
 
 checks = svyglm_checks(
-  "depression",
-  formula = depression ~ bzd + age + sex + region + marital_status + smoke + income + bzd*age,
+  "cancer",
+  formula = cancer ~ bzd + age + sex + region + smoke + education + age*sex, 
   df = prep$`Data with Outcome and Covars`,
   design = prep$`Survey Design`)
 
@@ -45,9 +45,8 @@ checks$`Residuals vs ID`
 # Refitting model due to VIF. Using centered age instead
 
 checks = svyglm_checks(
-  "depression",
-  formula = depression ~ bzd + centered_age + sex + region + marital_status + smoke + 
-    income + bzd*centered_age,
+  "cancer",
+  cancer ~ bzd + centered_age + sex + region + smoke + education + centered_age*sex,
   df = prep$`Data with Outcome and Covars`,
   design = prep$`Survey Design`)
 
@@ -70,8 +69,8 @@ prep$`Data with Outcome and Covars` %>%
 
 outliers_sa(
   cancer ~ bzd + centered_age + sex + region + smoke + education + centered_age*sex,
-  prep = prep,
-  checks = checks)
+            prep = prep,
+            checks = checks)
 
 # Refitted model ----
 
@@ -80,8 +79,7 @@ outliers_sa(
 # Final Model ----
 
 final_model <- svyglm(
-  formula = depression ~ bzd + centered_age + sex + region + marital_status + smoke + 
-    income + bzd*centered_age,
+  cancer ~ bzd + centered_age + sex + region + smoke + education + centered_age*sex,
   design = prep$`Survey Design`,
   family = stats::binomial(link = "logit")
 )

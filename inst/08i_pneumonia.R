@@ -1,6 +1,6 @@
-# Title: Regression Analysis for COPD  ----
+# Title: Regression Analysis for Pneumonia  ----
 
-# Description: regression analysis for COPD ----
+# Description: regression analysis for pneumonia ----
 
 # Setup ----
 
@@ -22,17 +22,17 @@ source("R/outliers_svy_sa.R")
 
 # Stepwise Regression ----
 
-stepwise_regression(outcome = "depression")
+stepwise_regression(outcome = "pneumonia")
 
 # Model Diagnositics ----
 
 #... Data Setup 
 
-prep = svyglm_checks_prep("depression")
+prep = svyglm_checks_prep("pneumonia")
 
 checks = svyglm_checks(
-  "depression",
-  formula = depression ~ bzd + age + sex + region + marital_status + smoke + income + bzd*age,
+  "pneumonia",
+  formula = pneumonia ~ bzd + region + income + bzd*age,
   df = prep$`Data with Outcome and Covars`,
   design = prep$`Survey Design`)
 
@@ -45,9 +45,8 @@ checks$`Residuals vs ID`
 # Refitting model due to VIF. Using centered age instead
 
 checks = svyglm_checks(
-  "depression",
-  formula = depression ~ bzd + centered_age + sex + region + marital_status + smoke + 
-    income + bzd*centered_age,
+  "pneumonia",
+  formula = pneumonia ~ bzd + region + income,
   df = prep$`Data with Outcome and Covars`,
   design = prep$`Survey Design`)
 
@@ -80,8 +79,7 @@ outliers_sa(
 # Final Model ----
 
 final_model <- svyglm(
-  formula = depression ~ bzd + centered_age + sex + region + marital_status + smoke + 
-    income + bzd*centered_age,
+  pneumonia ~ bzd + region + income,
   design = prep$`Survey Design`,
   family = stats::binomial(link = "logit")
 )

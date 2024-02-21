@@ -22,17 +22,17 @@ source("R/outliers_svy_sa.R")
 
 # Stepwise Regression ----
 
-stepwise_regression(outcome = "depression")
+stepwise_regression(outcome = "copd")
 
 # Model Diagnositics ----
 
 #... Data Setup 
 
-prep = svyglm_checks_prep("depression")
+prep = svyglm_checks_prep("copd")
 
 checks = svyglm_checks(
-  "depression",
-  formula = depression ~ bzd + age + sex + region + marital_status + smoke + income + bzd*age,
+  "copd",
+  formula = copd ~ bzd + age + marital_status + smoke + education + income,
   df = prep$`Data with Outcome and Covars`,
   design = prep$`Survey Design`)
 
@@ -45,9 +45,8 @@ checks$`Residuals vs ID`
 # Refitting model due to VIF. Using centered age instead
 
 checks = svyglm_checks(
-  "depression",
-  formula = depression ~ bzd + centered_age + sex + region + marital_status + smoke + 
-    income + bzd*centered_age,
+  "copd",
+  copd ~ bzd + centered_age + marital_status + smoke + education + income,
   df = prep$`Data with Outcome and Covars`,
   design = prep$`Survey Design`)
 
@@ -80,8 +79,7 @@ outliers_sa(
 # Final Model ----
 
 final_model <- svyglm(
-  formula = depression ~ bzd + centered_age + sex + region + marital_status + smoke + 
-    income + bzd*centered_age,
+  copd ~ bzd + centered_age + marital_status + smoke + education + income,
   design = prep$`Survey Design`,
   family = stats::binomial(link = "logit")
 )

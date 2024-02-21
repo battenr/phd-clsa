@@ -63,7 +63,8 @@ stepwise_regression <- function(outcome, df_regression = df.regression){
               "marital_status",
               "smoke",
               "education",
-              "household_income",
+              #"household_income",
+              "income",
               "urban_rural"
   ) 
   
@@ -140,13 +141,13 @@ stepwise_regression <- function(outcome, df_regression = df.regression){
   
   multivariable_formula <- reformulate(
     response = outcome, 
-    termlabels = univariate_results
+    termlabels = unique(c("bzd", univariate_results))
   )
   
   multivariable_results <- svyglm(
     reformulate(
       response = outcome, 
-      termlabels = univariate_results
+      termlabels = unique(c("bzd", univariate_results))
     ),
     design = design_analytic,
     family = binomial()
@@ -164,7 +165,10 @@ stepwise_regression <- function(outcome, df_regression = df.regression){
     
     pull(term) 
   
-  removed_vars = symdiff(multivariable_results, univariate_results) 
+  multivariable_results <- unique(c("bzd", multivariable_results))
+  
+  removed_vars = symdiff(unique(c("bzd", multivariable_results)), 
+                         unique(c("bzd", univariate_results)))
   
   multivariable_mod <- svyglm(
     reformulate(
@@ -182,7 +186,8 @@ stepwise_regression <- function(outcome, df_regression = df.regression){
   lrt <- function(var){
     
     formula_with <- reformulate(
-      as.character(paste(outcome, "~", paste(multivariable_results, collapse = " + "), " + ", var))
+      as.character(paste(outcome, "~", paste(multivariable_results, 
+        collapse = " + "), " + ", var))
     )
     
     model_with <- svyglm(
@@ -272,7 +277,7 @@ stepwise_regression <- function(outcome, df_regression = df.regression){
   
   interaction_terms <- c("age*sex", 
                          "bzd*sex",
-                         "household_income*education", 
+                         "income*education", 
                          "bzd*age", 
                          "urban_rural*region")
   
@@ -333,7 +338,7 @@ stepwise_regression <- function(outcome, df_regression = df.regression){
     paste(
       outcome, 
       "~", 
-      paste(multivariable_interaction_results, collapse = " + ")
+      paste(unique(c("bzd", multivariable_interaction_results)), collapse = " + ")
     )
   )
   

@@ -114,11 +114,12 @@ df.analytic <- df |>
        is.na(depression) == TRUE ~ NA_character_ 
      ), 
      diabetes_mellitus = dplyr::case_when(
-       diabetes_type == "Neither" ~ "no",
-       diabetes_type == "Type I" ~ "no",
-       diabetes_type == "Type II" ~ "yes",
-       diabetes_type == "Don't know or No Answer" ~ NA_character_,
-       is.na(diabetes_type) == TRUE ~ NA_character_ 
+       diabetes_yes_no == "Yes" & diabetes_type == "Neither" ~ "no",
+       diabetes_yes_no == "Yes" & diabetes_type == "Type I" ~ "no",
+       diabetes_yes_no == "Yes" & diabetes_type == "Type II" ~ "yes",
+       diabetes_yes_no == "No" ~ "no",
+       diabetes_yes_no == "Don't know or No answer" ~ NA_character_,
+       is.na(diabetes_yes_no) == TRUE ~ NA_character_ 
      ), 
      
      # Paused HERE
@@ -211,14 +212,11 @@ df.analytic <- df |>
     copd, 
     dementia, 
     pneumonia
-    
-    
-    
   )
 
 # Labelling Variables -----
 
-vars <- df %>% colnames()
+vars <- df.analytic %>% colnames()
 
 var_names <- c(
   "Unique subject identifer", 
@@ -252,7 +250,7 @@ for (x in 1:length(vars)){
   var <- vars[x]
   var_label <- var_names[x]
   
-  attr(df[[var]], "label") <- var_label # adding attributes to data
+  attr(df.analytic[[var]], "label") <- var_label # adding attributes to data
   
 }
 

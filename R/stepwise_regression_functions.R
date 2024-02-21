@@ -72,6 +72,8 @@ stepwise_regression <- function(outcome, df_regression = df.regression){
   
   # Survey Design Object
   
+
+  
   num_remaining <- df_regression %>% 
     dplyr::select(
       covars, 
@@ -263,6 +265,10 @@ stepwise_regression <- function(outcome, df_regression = df.regression){
     return(check.confounding)
   }
   
+  if(length(removed_vars) == 0){
+    change_in_coeff <- print("No variables were removed")
+  } else{
+  
   change_in_coeff <- purrr::map_df(removed_vars, function(removed_var) {
     fully_adjusted_formula <- paste(outcome, "~", paste(multivariable_results, collapse = "+"), "+", removed_var)
     partially_adjusted_formula <- paste(outcome, "~", paste(multivariable_results, collapse = "+"))
@@ -270,6 +276,7 @@ stepwise_regression <- function(outcome, df_regression = df.regression){
     check_confounding(fully_adjusted_formula, partially_adjusted_formula)
   }) %>%
     filter(change > 20)
+  }
   
   # If there is a change then comeback to this and add an if statement (See chatgpt)
   

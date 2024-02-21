@@ -40,8 +40,28 @@ df.na.missing = df %>% mutate_all(~replace_na(., "missing")) %>%
                                 "50k to <100k",
                                 "100k to <150k",
                                 "150k+", 
-                                "missing"))
+                                "missing")),
+    region = dplyr::case_when(
+      province == "Alberta" ~ "Prarie",
+      province == "British Columbia" ~ "West",
+      province == "Manitoba" ~ "Prarie",
+      province == "Newfoundland and Labrador" ~ "Atlantic",
+      province == "Nova Scotia" ~ "Atlantic",
+      province == "Ontario" ~ "Central",
+      province == "Quebec" ~ "Central",
+    ),
+    income = dplyr::case_when(
+      household_income == "<20k" ~ "<20k to <50k", 
+      household_income == "20k to <50k" ~ "<20k to <50k",
+      household_income == "50k to <100k" ~ "50k to <150k",
+      household_income == "100k to <150k" ~ "50k to <150k",
+      household_income == "150k+" ~ "150k+",
+      household_income == "missing" ~ "missing"
+      
+    )
   )
+
+
 
 unique(df.na.missing$household_income)
 
@@ -59,7 +79,7 @@ design.infl <- svydesign(data = df.na.missing,
 #... Character Variables ----
 
 df.na.missing |> 
-  select(
+  dplyr::select(
     -c(entity_id, age, 
        contains("wghts"), 
        geostrata)
@@ -106,11 +126,11 @@ sqrt(svyvar(df.na.missing$age, design = design.infl))
 source("R/svy_countby.R")
 
 c("sex", 
-  "province",
+  "region",
   "marital_status",
   "smoke",
   "education",
-  "household_income",
+  "income",
   "urban_rural"
   ) %>%
   purrr::map(

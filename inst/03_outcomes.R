@@ -56,6 +56,7 @@ df_outcomes <- dat %>%
     entity_id, 
     ccc_anxi_com, 
     dpr_clindep_com,
+    dia_diab_com, # Has a doctor ever told you that you have diabetes, borderline diabetes or that your blood sugar is high
     dia_type_com, # There are some that are NA. So those that say "yes" to diabetes
     # but type is missing I'm not including as Type 2 diabetes
     
@@ -89,6 +90,13 @@ df_outcomes <- dat %>%
      dpr_clindep_com == 8 ~ "Don't know or No answer",
      dpr_clindep_com == 9 ~ "Refused"
     ),
+   
+   diabetes_yes_no = dplyr::case_when(
+     dia_diab_com == 1 ~ "Yes", 
+     dia_diab_com == 2 ~ "No",
+     dia_diab_com == 8 ~ "Don't know or No answer",
+     dia_diab_com == 9 ~ "Refused"
+   ),
     
     diabetes_type = dplyr::case_when(
       dia_type_com == 1 ~ "Type I", 
@@ -163,6 +171,7 @@ df_outcomes <- dat %>%
     entity_id,
     anxiety, 
     depression,
+    diabetes_yes_no,
     diabetes_type,
     hbp, 
     mi, 
@@ -181,6 +190,7 @@ var_names <- c(
   "Unique subject identifer", 
   "Anxiety",
   "Depression",
+  "Diabetes (Yes/No)",
   "Diabetes Mellitus",
   "High blood pressure",
   "Myocardial Infarction",

@@ -17,6 +17,22 @@ load("data/analytic_dataset.Rdata")
 
 # Formatting Data ----
 
+# From Hosmer & Lemeshow (for logistic regression) ----
+
+# deltaB = rsj^2 * hj / (1 - hj)
+# deltaChiSq = rsj^2
+# deltaD = dj^2 / (1-hj)
+
+# we are taking each of these for each covariate pattern
+
+
+
+
+
+
+
+
+
 svymean(df_regression$age, 
         design = design_analytic)
 
@@ -100,27 +116,83 @@ design_analytic <- svydesign(data = df_regression,
 # Model is fit based on output from stepwise regression function 
 
 mod <- svyglm(
-  depression ~ bzd + centered_age + sex + region + marital_status + smoke + household_income,
+  depression ~ bzd + age + sex + region + marital_status + smoke + household_income,
   design = design_analytic,
   family = stats::quasibinomial(link = "logit")
 )
 
-# Plotting residuals vs participant id (entity_id) ----
+test = predict(mod, type = "response") %>% as.data.frame()
 
-residuals = data.frame(
-  id = df_regression$entity_id,
-  resid = svydiags::svystdres(mod),
-  age = df_regression$age,
-  bzd = df_regression$bzd,
-  sex = df_regression$sex,
-  region = df_regression$region,
-  marital_status = df_regression$marital_status,
-  smoke = df_regression$smoke,
-  education = df_regression$education,
-  household_income = df_regression$household_income,
-  urban_rural = df_regression$urban_rural,
-  centered_age = df_regression$age
-)
+test %>% as.data.frame()
+
+covar_pattern <- df_regression %>% 
+  mutate(
+    rsj = rstandard(mod, type = "pearson"),
+    dj = residuals(mod, type = "deviance"),
+    hj = hatvalues(mod)
+  ) %>% 
+  group_by(bzd, 
+           age, 
+           sex, 
+           region, 
+           marital_status, 
+           smoke, 
+           household_income) %>% 
+  mutate(
+    mj = cur_group_id()
+  ) %>% 
+  slice_head() %>% 
+  ungroup() %>% 
+  select(
+    bzd, 
+    age, 
+    sex, 
+    region, 
+    marital_status, 
+    smoke, 
+    household_income,
+    rsj,
+    dj,
+    hj,
+    mj
+  ) 
+
+
+predict(mod, type = "response", newdata = covar_pattern)
+
+df_diag <- covar_pattern %>% 
+  mutate(
+    pred_prob = predict(mod, type = "response", newdata = covar_pattern)
+  ) %>% 
+  mutate(
+    deltaChisq = rsj^2,
+    deltaB = (rsj*hj) / (1-hj), 
+    deltaD = dj^2 / (1-hj)
+  )
+
+ggplot(data = df_diag, aes(x = pred_prob, y = deltaD)) + 
+  geom_point()
+
+ggplot(data = df_diag, aes(x = pred_prob, y = deltaChisq)) + 
+  geom_point()
+
+ggplot(data = df_diag, aes(x = pred_prob, y = deltaB)) + 
+  geom_point()
+
+
+# deltaB = rsj^2 * hj / (1 - hj)
+# deltaChiSq = rsj^2
+# deltaD = dj^2 / (1-hj)
+
+
+# Having to Remove Covariate Pattern ----
+
+# If having to remove a covariate pattern, then need to remove it and repeat the process of fitting a model. 
+
+
+
+
+
 
 # Starting with Plot of Residuals vs Patient IDs. Can add others as needed
 # (i.e., age or centered age, etc)

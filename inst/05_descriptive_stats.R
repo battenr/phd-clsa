@@ -97,14 +97,6 @@ df |> colnames()
 
 svymean(df.na.missing$age, design = design.infl) 
 
-svybys(~age, ~bzd, svymean, design = design.infl)
-
-svybys(~age, ~bzd, svyvar, design = design.infl)
-
-sqrt(117.8)
-
-
-
 # SD
 
 # To calculate SD you need to calculate variance first then take the sqrt()

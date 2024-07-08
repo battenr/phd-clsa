@@ -31,6 +31,14 @@ load("data/analytic_dataset.Rdata")
 
 # 6. Check plausible interaction terms: (four)
 
+# This is too many interaction terms. I'm going to pick a couple, that are 
+# interaction terms with respective to the treatment. So bzd*whatever. Remember
+# that this has to do with the outcome. So bzd*sex there may be a difference w/r
+# to heart disease (since mostly males are affected)
+
+
+# - sex*bzd :
+
 age*sex
 household_income*education
 age*urban_rural
@@ -40,14 +48,15 @@ urban_rural*province
 
 # 7. Check assumptions
 
-# - Check that errors are independent (similar to MSc)
-# - Check leverage and Cook's distance for outliers
-# - Collinearity (calculate VIF) [leaving this out for now bc it's a survey GLM
-# which is different from a GLM, it's doesn't use MLE]
+# - The previous assumptions were wrong. My outcomes are all based on 
+# logistic regression. So because of this, I'm going to use the diagnostic plots 
+# that are outlined in Hosmer and Lemeshow: 
+
+# - deltaChi vs predicted prob
+# - deltaD (deviance) vs predicted prob
+# - deltaB (change in beta estimate vs predicted prob)
 
 
-
-#... Checking Model Diagnostics 
 
 
 

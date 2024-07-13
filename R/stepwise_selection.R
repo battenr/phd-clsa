@@ -1,78 +1,28 @@
-# Setup
-
-library(tidyverse)
-library(survey)
-library(svydiags)
-
-
-load("data/analytic_dataset.Rdata")
-
-df.regression <- df %>%
+stepwise_selection <- function(outcome, 
+                                df_regression = df_regression){
   
-  # Recoding everything so that it can be 1 and 0 for yes/no for each of the outcomes
+  library(tidyverse) # ol faithful 
+  library(survey) # used since this is survey data 
   
-  dplyr::mutate(
-    across(
-      c("anxiety", "depression", "diabetes_mellitus", "hbp",
-        "mi", "stroke", "cancer", "heart_disease", "copd",
-        "dementia", "pneumonia"),
-      ~case_match(., "yes" ~ 1, "no" ~ 0)
-    )
-  ) %>% 
-
-dplyr::mutate(
-  region = dplyr::case_when(
-    province == "Alberta" ~ "Prarie",
-    province == "British Columbia" ~ "West",
-    province == "Manitoba" ~ "Prarie",
-    province == "Newfoundland and Labrador" ~ "Atlantic",
-    province == "Nova Scotia" ~ "Atlantic",
-    province == "Ontario" ~ "Central",
-    province == "Quebec" ~ "Central",
-  ),
-  income = dplyr::case_when(
-    household_income == "<20k" ~ "<20k to <50k", 
-    household_income == "20k to <50k" ~ "<20k to <50k",
-    household_income == "50k to <100k" ~ "50k to <150k",
-    household_income == "100k to <150k" ~ "50k to <150k",
-    household_income == "150k+" ~ "150k+"
-    
-  )
-)
-
-
-
-
-# outcome = "depression"
-# df_regression = df.regression
-
-# Function -----
-
-stepwise_regression <- function(outcome, df_regression = df.regression){
-  
-  library(tidyverse)
-  library(survey)
-  
-  # Covariates 
+  # Covariates that we are using
   
   covars <- c("bzd",
               "age", 
               "sex",
               #"province",
-              "region",
-              "marital_status",
+              "region", # region of Canada is used instead of province
+              "marital_status", 
               "smoke",
-              "education",
+              "education", 
               #"household_income",
               "income",
               "urban_rural"
   ) 
   
-  # Dataframe for analyses, converting the values to 0 and 1 for regression analyses
+  # Calculating the number of patients. This is going to be different 
+  # for each analysis 
   
-  # Survey Design Object
-  
-
+  # total sample size remaining
   
   num_remaining <- df_regression %>% 
     dplyr::select(
@@ -82,6 +32,8 @@ stepwise_regression <- function(outcome, df_regression = df.regression){
       geostrata) %>%
     drop_na() %>% nrow()
   
+  # Number of patients with a BZD 
+  
   num_bzd <- df_regression %>% 
     dplyr::select(
       covars, 
@@ -89,6 +41,8 @@ stepwise_regression <- function(outcome, df_regression = df.regression){
       wghts_analytic, 
       geostrata) %>%
     drop_na() %>% count(bzd)
+  
+  # Creating the survey design objects 
   
   design_analytic <- svydesign(data = df_regression %>% 
                                  dplyr::select(
@@ -107,13 +61,27 @@ stepwise_regression <- function(outcome, df_regression = df.regression){
   
   #... Function
   
-  univar <- function(outcome, var, design = design_analytic){
+  univar <- function(outcome, 
+                     var, 
+                     design = design_analytic){
+    
+    # Reformulating as outcome ~ variable
     
     formula <- reformulate(as.character(paste(outcome, "~", var)))
     
-    model <- survey::svyglm(paste(outcome, "~", var), design = design)
+    # Fitting glm 
     
-    car::Anova(model, type = "III") %>% slice_tail() 
+    model <- survey::svyglm(paste(outcome, "~", var), 
+                            design = design,
+                            family = binomial(link = "logit"))
+    
+    # Using the working likelihood ratio (Rao-Scott) test
+    
+    term_test <- regTermTest(model, 
+                          test.terms = var, 
+                          method = "LRT")
+    
+    term_test$p
     
   }
   
@@ -121,15 +89,26 @@ stepwise_regression <- function(outcome, df_regression = df.regression){
   
   univariate_results <- covars %>%
     
-    # Applying 
+    # Applying the univariate function above to each of the covariates 
     
-    purrr::map_df(
+    purrr::map_dbl(
       ~univar(outcome, var = .x)
     ) %>%
     
-    # Selecting only those variables with a p-value less than  0.20 
+    cbind(covars) %>% 
+    as.data.frame() %>% 
     
-    filter(`Pr(>Chisq)` < 0.20) %>%
+    mutate(
+      
+    )
+  
+  univariate_results$p_value <- univariate_results$.
+    
+    # Selecting only those variables with a p-value less than  0.20 
+  
+  univariate_results <- univariate_results %>% 
+    
+    filter(p_value < 0.20) %>%
     
     # Making rownames a column so can extract the variable 
     
@@ -139,12 +118,14 @@ stepwise_regression <- function(outcome, df_regression = df.regression){
     
     pull(term)
   
-  # Step 3 ####
+  # Step 3 - Fitting Multivariable Model ####
   
   multivariable_formula <- reformulate(
     response = outcome, 
     termlabels = unique(c("bzd", univariate_results))
   )
+  
+  # Fitting the model 
   
   multivariable_results <- svyglm(
     reformulate(
@@ -154,7 +135,10 @@ stepwise_regression <- function(outcome, df_regression = df.regression){
     design = design_analytic,
     family = binomial()
   ) %>%
-    car::Anova(type = "III") %>%
+    car::Anova(type = "III") %>% # using type III sum of squares 
+    
+    # Choosing only those 
+    
     filter(`Pr(>Chisq)` < 0.05) %>%
     
     # Making rownames a column so can extract the variable 

@@ -18,9 +18,12 @@ univar <- function(outcome, var, design = design_analytic){
   
   model <- survey::svyglm(paste(outcome, "~", var), design = design)
   
-  # Using type III p-values to get a value for the overall value (rather than 
-  # wald tests)
+  # Using the working likelihood ratio (Rao-Scott) test
   
-  car::Anova(model, type = "III") %>% slice_tail() 
+  term_test <- regTermTest(model, 
+                           test.terms = var, 
+                           method = "LRT")
+  
+  term_test$p
   
 }

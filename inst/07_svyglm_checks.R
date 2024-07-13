@@ -9,7 +9,6 @@
 
 library(tidyverse)
 library(survey)
-library(svydiags)
 
 #... Loading Data ----
 
@@ -25,16 +24,6 @@ load("data/analytic_dataset.Rdata")
 
 # we are taking each of these for each covariate pattern
 
-
-
-
-
-
-
-
-
-svymean(df_regression$age, 
-        design = design_analytic)
 
 df_regression <- df %>% 
   mutate(centered_age = age - 58) %>% # subtracting mean from age 
@@ -100,7 +89,23 @@ df_regression <- df %>%
   
   # Dropping NA 
   
-  drop_na()
+  drop_na() %>% 
+  
+  # Grouping to create covariate patterns 
+  
+  group_by(bzd, 
+           age, 
+           sex, 
+           region, 
+           marital_status, 
+           smoke, 
+           household_income) %>% 
+  # Adding group ID 
+  mutate(
+    mj = cur_group_id()
+  ) %>% 
+  
+  ungroup()
 
 # Survey Design ----
 
@@ -121,16 +126,21 @@ mod <- svyglm(
   family = stats::quasibinomial(link = "logit")
 )
 
+# Regression Diagnositcs ----
+
+#... Predicted Probability ----
+
 test = predict(mod, type = "response") %>% as.data.frame()
 
-test %>% as.data.frame()
+#... Components for Diagnostics ----
 
 covar_pattern <- df_regression %>% 
   mutate(
-    rsj = rstandard(mod, type = "pearson"),
-    dj = residuals(mod, type = "deviance"),
-    hj = hatvalues(mod)
+    rsj = rstandard(mod, type = "pearson"), # Pearson standardized residuals
+    dj = residuals(mod, type = "deviance"), # deviance
+    hj = hatvalues(mod) # leverage 
   ) %>% 
+  # Grouping by variables in the model for covariate patterns 
   group_by(bzd, 
            age, 
            sex, 
@@ -138,6 +148,7 @@ covar_pattern <- df_regression %>%
            marital_status, 
            smoke, 
            household_income) %>% 
+  # Adding group ID 
   mutate(
     mj = cur_group_id()
   ) %>% 

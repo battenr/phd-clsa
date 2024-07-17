@@ -1,6 +1,7 @@
 
 
-format_data <- function(dat = df) {
+format_data <- function(outcome, 
+                        dat = df) {
   dat %>% 
   mutate(centered_age = age - 58) %>% # subtracting mean from age 
   
@@ -39,20 +40,18 @@ format_data <- function(dat = df) {
   dplyr::select(
     bzd,
     age, 
-    centered_age,
     sex,
+    #region,
     province,
-    region,
     marital_status,
     smoke,
     education,
     income,
-    #income,
     urban_rural,
     
-    # Depression
+    # Outcome
     
-    depression,
+    outcome,
     
     # 
     
@@ -65,21 +64,7 @@ format_data <- function(dat = df) {
   
   # Dropping NA 
   
-  drop_na() %>% 
+  drop_na() 
   
-  # Grouping to create covariate patterns 
-  
-  group_by(bzd, 
-           age, 
-           sex, 
-           region, 
-           marital_status, 
-           smoke, 
-           income) %>% 
-  # Adding group ID 
-  mutate(
-    mj = cur_group_id()
-  ) %>% 
-  
-  ungroup() #%>% 
+
 }

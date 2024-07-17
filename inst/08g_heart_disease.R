@@ -8,105 +8,349 @@
 
 library(tidyverse)
 library(survey)
-library(svydiags)
+library(broom)
 
 load("data/analytic_dataset.Rdata")
 
 #.... Functions ----
 
-source("R/stepwise_regression_functions.R") # note: this can take a while to load
-source("R/svyglm_checks_prep.R")
-source("R/svyglm_checks.R")
-source("R/outliers_svy_sa.R")
+source("R/format_data.R")
+source("R/univar_analysis.R") # note: this can take a while to load
+source("R/check_confounding.R")
+
+#... Outcome ----
+
+outcome = "heart_disease"
+
+# Data Setup ----
+
+df_regression <- format_data(outcome = "heart_disease")
+
+#... Survey Design ----
+
+design_analytic <- svydesign(data = df_regression,
+                             weights= ~wghts_analytic, 
+                             strata = ~geostrata,
+                             ids = ~1)
+
+# Stepwise Variable Selection ----
+
+covars <- c("bzd",
+            "age", 
+            "sex",
+            "province",
+            #"region", # region of Canada is used instead of province
+            "marital_status", 
+            "smoke",
+            "education", 
+            #"household_income",
+            "income",
+            "urban_rural"
+) 
+
+#... Univariate Analysis ----
+
+univar_result <- covars %>% 
+  purrr::map_dbl(
+    ~univar(outcome = outcome, var = .x)
+  ) %>% 
+  enframe(name = "variable", value = "p_value") %>% 
+  cbind(covars) %>% 
+  filter(p_value < 0.20)
 
 
-# Stepwise Regression ----
+#... Multivariable Analysis ----
 
-stepwise_regression(outcome = "heart_disease")
+multivar_mod <- svyglm(
+  reformulate(
+    response = outcome, 
+    termlabels = c(univar_result$covars)
+  ),
+  design = design_analytic,
+  family = binomial(link = "logit")
+)
 
-# Model Diagnositics ----
+broom::tidy(multivar_mod)
 
-#... Data Setup 
 
-prep = svyglm_checks_prep("heart_disease")
 
-checks = svyglm_checks(
-  "heart_disease",
-  formula = heart_disease ~ bzd + age + sex + region + smoke + income, 
-  df = prep$`Data with Outcome and Covars`,
-  design = prep$`Survey Design`)
+lrt_test <- function(mod, x){
+  
+  result <- regTermTest(model = mod, 
+                        test.terms = x, 
+                        method = "LRT")
+  
+  result$p
+}
 
-checks$VIF
-nrow(checks$`Problematic Outliers`)
-checks$`Residuals vs ID`
+keep_vars <- univar_result$covars %>% 
+  map_dbl(
+    ~lrt_test(multivar_mod, .x)
+  ) %>% 
+  enframe(name = "variable", value = "p_value") %>% 
+  cbind(univar_result$covars) %>% 
+  filter(p_value < 0.05 | `univar_result$covars` == "bzd") %>% 
+  rename(
+    var = `univar_result$covars`
+  )
 
-# Refitting model 
+# Checking if Confounder ----
 
-# Refitting model due to VIF. Using centered age instead
+univar_result %>% 
+  filter(
+    !(covars %in% keep_vars$var)
+  ) %>% select(covars)
 
-checks = svyglm_checks(
-  "heart_disease",
-  heart_disease ~ bzd + centered_age + sex + region + smoke + income,
-  df = prep$`Data with Outcome and Covars`,
-  design = prep$`Survey Design`)
+#... Marital Status ----
 
-checks$VIF
-nrow(checks$`Problematic Outliers`)
-checks$`Residuals vs ID`
+check_confounding(fully_adjusted =   
+                    reformulate(response = outcome, 
+                                termlabels = c(keep_vars$var, 
+                                               "marital_status")
+                    ),
+                  partially_adjusted = 
+                    reformulate(response = outcome, 
+                                termlabels = c(keep_vars$var)
+                    )
+)
 
-# Outliers ----
+#... Education ----
 
-#... Viewing Outliers 
+check_confounding(fully_adjusted =   
+                    reformulate(response = outcome, 
+                                termlabels = c(keep_vars$var, 
+                                               "education")
+                    ),
+                  partially_adjusted = 
+                    reformulate(response = outcome, 
+                                termlabels = c(keep_vars$var)
+                    )
+)
 
-prep$`Data with Outcome and Covars` %>%
-  dplyr::filter(
-    entity_id %in% checks$`Problematic Outliers`$id
-  ) %>% view()
+#... What is included ----
 
-#... Checking Outliers ----
+# Based on the quantiative approach, none of the removed variables are 
+# confounders 
 
-# Using a sensivitiy analysis to check for outliers
+# Check for Interaction Terms ----- 
 
-outliers_sa(
-  cancer ~ bzd + centered_age + sex + region + smoke + education + centered_age*sex,
-  prep = prep,
-  checks = checks)
+keep_vars$var # all of the variables that are going to be included 
 
-# Refitted model ----
+# For heart_disease, thinking of: 
 
-# NA 
+# - bzd*sex
+# - bzd*income
+# - bzd*smoke
+
+keep_vars$var
+
+# Checking by looking at by checking across stratum
+
+# BZD*Sex
+
+table_matrix <- svytable(~heart_disease + bzd + sex, 
+                         design = design_analytic)  %>% 
+  as.matrix() 
+
+table_matrix[4,1]*table_matrix[1,1]  / (table_matrix[3,1]*table_matrix[2,1])
+
+table_matrix[8,1]*table_matrix[5,1]  / (table_matrix[7,1]*table_matrix[6,1])
+
+# BZD*Income
+
+table_matrix <- svytable(~heart_disease + bzd + income, 
+                         design = design_analytic) %>% 
+  as.matrix() 
+
+table_matrix[4,1]*table_matrix[1,1]  / (table_matrix[3,1]*table_matrix[2,1])
+
+table_matrix[8,1]*table_matrix[5,1]  / (table_matrix[7,1]*table_matrix[6,1])
+
+table_matrix[12,1]*table_matrix[9,1]  / (table_matrix[11,1]*table_matrix[10,1])
+
+
+# BZD * Smoke
+
+table_matrix <- svytable(~heart_disease + bzd + smoke, 
+                         design = design_analytic) %>% 
+  as.matrix() 
+
+
+table_matrix[4,1]*table_matrix[1,1]  / (table_matrix[3,1]*table_matrix[2,1])
+
+table_matrix[8,1]*table_matrix[5,1]  / (table_matrix[7,1]*table_matrix[6,1])
+
+table_matrix[12,1]*table_matrix[9,1]  / (table_matrix[11,1]*table_matrix[10,1])
+
+# include it
+
+# Testing Interactions in Model ----
+
+# Terms: 
+
+interaction_terms <- c(
+  "bzd*smoke",
+  "bzd*income"
+  #"bzd*income"#,
+  # "bzd*marital_status"
+)
+
+mod_interaction <- svyglm(
+  formula = reformulate(response = outcome, 
+                        termlabels = c(keep_vars$var, 
+                                       interaction_terms)
+  ),
+  design = design_analytic, 
+  family = binomial(link = "logit")
+)
+
+broom::tidy(mod_interaction)
+
+survey::regTermTest(mod_interaction, 
+                    "bzd:smoke",
+                    method = "LRT")
+
+survey::regTermTest(mod_interaction, 
+                    "bzd:income",
+                    method = "LRT")
 
 # Final Model ----
 
+# No interaction terms 
+
 final_model <- svyglm(
-  heart_disease ~ bzd + centered_age + sex + region + smoke + income,
-  design = prep$`Survey Design`,
+  formula = reformulate(response = outcome, 
+                        termlabels = c(keep_vars$var)
+  ),
+  design = design_analytic,
   family = stats::binomial(link = "logit")
 )
 
-# P-Values ----
+broom::tidy(final_model) %>% 
+  filter(grepl("bzd", term))
 
-car::Anova(final_model, type = "III") %>%
-  as_tibble(rownames = "term") %>%
-  filter(grepl("bzd", term)) %>%
+final_model$formula
+
+# Checking Diagnostics ----
+
+#... Components for Diagnostics ----
+
+# Need to capture the covariate patterns based on the variable that are included
+
+df_regression <- df_regression %>% 
+  group_by(
+    bzd, 
+    age,
+    sex,
+    province, 
+    smoke, 
+    income
+  ) %>% 
   mutate(
-    `Pr(>Chisq)` = round(`Pr(>Chisq)`, 6)
-  ) %>%
-  dplyr::select(term, `Pr(>Chisq)`)
+    mj = cur_group_id()
+  ) %>% 
+  ungroup() 
 
-# Terms ----
+# covar_pattern <- df_regression %>%
+#   select(
+#     covars,
+#     outcome,
+#     mj
+#   )
+
+
+
+df_diag <- df_regression %>% 
+  mutate(
+    rsj = rstandard(final_model, type = "pearson"), # Pearson standardized residuals
+    dj = residuals(final_model, type = "deviance"), # deviance
+    hj = hatvalues(final_model), # leverage 
+    pred_prob = predict(final_model, type = "response") #, newdata = covar_pattern)
+  ) %>% 
+  group_by(mj) %>% 
+  slice_head() %>% 
+  mutate(
+    deltaChisq = rsj^2,
+    deltaB = (rsj*hj) / (1-hj), 
+    deltaD = dj^2 / (1-hj)
+  )
+
+ggplot(data = df_diag, aes(x = pred_prob, y = deltaD)) + 
+  geom_point() + 
+  labs(title = "Change in Deviance vs Predicted Probability", 
+       x = "\u03C0",
+       y = "\u0394D") +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5)
+  ) 
+
+# Covariate pattern 47 would be the problematic one. Going to check if 
+# the parameter estimates really change after removing this observation. 
+
+ggplot(data = df_diag, aes(x = pred_prob, y = deltaChisq)) + 
+  geom_point() +
+  labs(title = "Change in \u03C7\u00B2 vs Predicted Probability", 
+       x = "\u03C0",
+       y = "\u03C7\u00B2") +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5)
+  ) 
+
+ggplot(data = df_diag, aes(x = pred_prob, y = deltaB)) + 
+  geom_point() +
+  labs(title = "Change in \u0394\u03B2 vs Predicted Probability", 
+       x = "\u03C0",
+       y = "\u0394\u03B2") +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5)
+  ) 
+
+# mj 
+
+# Having to Remove Covariate Pattern ----
+
+# If having to remove a covariate pattern, then need to remove it and 
+#repeat the process of fitting a model. 
+
+#... Survey Design ----
+
+design_analytic_updated <- svydesign(data = df_regression %>% 
+                                       filter(!(mj %in% c(202, 31,
+                                                          606, 823))
+                                              ),
+                                     weights= ~wghts_analytic, 
+                                     strata = ~geostrata,
+                                     #fpc = ~strata_total,
+                                     ids = ~1,
+                                     nest = TRUE)
+svyglm(
+  formula = final_model$formula,
+  design = design_analytic_updated,
+  family = stats::binomial(link = "logit")
+) %>% 
+  broom::tidy() %>% 
+  filter(grepl("bzd", term))
+
+# Conclusion: the change is so minimal on the parameters it doesn't even matter. 
+
+# Side note: I assume this is due to the large sample size that we have 
+
+# Final Result ----
+
+# If no covariate patterns removed. 
 
 final_model %>%
-  broom::tidy() %>%
+  tidy() %>%
   filter(grepl("bzd", term)) %>%
   mutate(
-    OR = exp(estimate),
-    lower_ci = round(exp(estimate - 1.96*std.error),3),
-    upper_ci = round(exp(estimate + 1.96*std.error), 3),
-    conf_interval_95 = paste(lower_ci, " to ", upper_ci)
-  ) %>%
-  dplyr::select(
-    term, OR, conf_interval_95
+    or_lower = exp(estimate - 1.96*std.error),
+    or = exp(estimate),
+    or_upper = exp(estimate + 1.96*std.error)
   )
+
+survey::regTermTest(final_model, "bzd", method = "LRT")
 
 final_model$formula

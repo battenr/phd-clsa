@@ -61,19 +61,37 @@ df.na.missing = df %>% mutate_all(~replace_na(., "missing")) %>%
     )
   )
 
-
-
 unique(df.na.missing$household_income)
 
 # Survey Design ----
 
-design.infl <- svydesign(data = df.na.missing, 
+design.infl <- svydesign(data = df.na.missing %>% 
+                           mutate(sex = ifelse(sex == "F", 1, 0),
+                                  included = 1,
+                                  bzd = ifelse(bzd == "yes", 1, 0),
+                                  smoke == ), 
                          weights= ~wghts_inflation, 
                          strata = ~geostrata,
-                         #fpc = ~strata_total,
-                         ids = ~1,
-                         nest = TRUE)
+                         ids = ~1)
 
+df.na.missing %>% count(bzd)
+
+svytotal(~sex+bzd, design.infl)
+
+# Another way to do it (other than using my function below). Spot checking 
+# (only using sex & BZD to check) to see if the results would be different 
+# One thing to note is that you can get stratum specific estimates using the svyratio 
+# function 
+
+
+svyratio(~sex, ~included, design = design.infl)
+svyratio(~bzd, ~included, design = design.infl)
+
+
+
+
+
+?svytotal
 # Overall Cohort ----
 
 #... Character Variables ----
@@ -88,6 +106,8 @@ df.na.missing |>
   map(
     \(x)svy_count(x, design = design.infl, data = df.na.missing)
   ) 
+
+svy_count("bzd")
 
 df |> colnames()
 
@@ -128,6 +148,8 @@ c("sex",
   purrr::map(
     ~svy_countby(.x, byvar = "bzd", data = df.na.missing) %>% arrange(bzd)
   )
+
+svy_countby(bzd)
    
 
 

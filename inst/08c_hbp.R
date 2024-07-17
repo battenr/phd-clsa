@@ -2,308 +2,342 @@
 
 # Description: regression analysis for high blood pressure ----
 
-
 # Setup ----
 
 #... Libraries ----
 
 library(tidyverse)
 library(survey)
-library(svydiags)
+library(broom)
 
 load("data/analytic_dataset.Rdata")
 
 #.... Functions ----
 
-source("R/stepwise_regression_functions.R") # note: this can take a while to load
+source("R/format_data.R")
+source("R/univar_analysis.R") # note: this can take a while to load
+source("R/check_confounding.R")
 
-# Stepwise Regression ----
-
-stepwise_regression(outcome = "hbp")
-
-# Model Diagnostics ----
+#... Outcome ----
 
 outcome = "hbp"
 
-# For this section, take necessary code from the svyglm_checks.R code
+# Data Setup ----
 
-#... Setup ----
+df_regression <- format_data(outcome = "hbp")
 
-df_regression <- df %>% 
-  mutate(centered_age = age - 58) %>% # subtracting mean, calculated using svymean, from age 
-  
-  # Converting the values of "yes" and "no" to 1 and 0 so 
-  # they can be used in the logistic regression
-  
-  mutate(
-    across(
-      c("anxiety", "depression", "diabetes_mellitus", "hbp",
-        "mi", "stroke", "cancer", "heart_disease", "copd",
-        "dementia", "pneumonia"),
-      ~case_match(., "yes" ~ 1, "no" ~ 0)
-    )
-  ) %>% 
-  
-  dplyr::mutate(
-    region = dplyr::case_when(
-      province == "Alberta" ~ "Prarie",
-      province == "British Columbia" ~ "West",
-      province == "Manitoba" ~ "Prarie",
-      province == "Newfoundland and Labrador" ~ "Atlantic",
-      province == "Nova Scotia" ~ "Atlantic",
-      province == "Ontario" ~ "Central",
-      province == "Quebec" ~ "Central",
-    ),
-    income = dplyr::case_when(
-      household_income == "<20k" ~ "<20k to <50k", 
-      household_income == "20k to <50k" ~ "<20k to <50k",
-      household_income == "50k to <100k" ~ "50k to <150k",
-      household_income == "100k to <150k" ~ "50k to <150k",
-      household_income == "150k+" ~ "150k+"
-      
-    )
-  ) %>%
-  
-  dplyr::select(
-    bzd,
-    age, 
-    centered_age,
-    sex,
-    province,
-    region,
-    marital_status,
-    smoke,
-    education,
-    income,
-    household_income,
-    urban_rural,
-    
-    # Outcome
-    
-    outcome,
-    
-    # 
-    
-    entity_id,
-    
-    wghts_analytic, 
-    geostrata
-    
-  ) %>%
-  
-  # Dropping NA 
-  
-  drop_na()
-
-# Survey Design ----
+#... Survey Design ----
 
 design_analytic <- svydesign(data = df_regression,
                              weights= ~wghts_analytic, 
                              strata = ~geostrata,
-                             #fpc = ~strata_total,
-                             ids = ~1,
-                             nest = TRUE)
+                             ids = ~1)
 
-#... Fitting Model ----
+# Stepwise Variable Selection ----
 
-# Model is fit based on output from stepwise regression function 
+covars <- c("bzd",
+            "age", 
+            "sex",
+            "province",
+            #"region", # region of Canada is used instead of province
+            "marital_status", 
+            "smoke",
+            "education", 
+            #"household_income",
+            "income",
+            "urban_rural"
+) 
 
-formula = as.formula("hbp ~ bzd + age + sex + smoke + education + income + age*sex")
+#... Univariate Analysis ----
 
-mod <- svyglm(
-  formula,
-  design = design_analytic,
-  family = stats::binomial(link = "logit")
-)
+univar_result <- covars %>% 
+  purrr::map_dbl(
+    ~univar(outcome = outcome, var = .x)
+  ) %>% 
+  enframe(name = "variable", value = "p_value") %>% 
+  cbind(covars) %>% 
+  filter(p_value < 0.20)
 
-#... Plotting residuals vs participant id (entity_id) ----
 
-residuals = data.frame(
-  id = df_regression$entity_id,
-  resid = svydiags::svystdres(mod),
-  age = df_regression$age,
-  bzd = df_regression$bzd,
-  sex = df_regression$sex,
-  region = df_regression$region,
-  marital_status = df_regression$marital_status,
-  smoke = df_regression$smoke,
-  education = df_regression$education,
-  income = df_regression$income,
-  urban_rural = df_regression$urban_rural,
-  centered_age = df_regression$age
-)
+#... Multivariable Analysis ----
 
-# Starting with Plot of Residuals vs Patient IDs. Can add others as needed
-# (i.e., age or centered age, etc)
-
-ggplot(data = residuals, 
-       mapping = aes(x = id, y = resid.stdresids)) +
-  geom_point()
-
-#... VIF ----
-
-# Checking if any > 10
-
-X1 <- df_regression[order(df_regression$geostrata),]
-
-X2 <- model.matrix(
-  ~bzd + age + sex + smoke + education + income + age*sex,
-  data = data.frame(X1)
-)
-
-vif <- svydiags::svyvif(
-  mobj = mod, 
-  X = X2[,-1],
-  w = df_regression$wghts_analytic,
-  stvar = "geostrata",
-  clvar = NULL
-)
-
-#... Cook's distance ----
-
-df.outliers = data.frame(
-  id = df_regression$entity_id,
-  cooksd = svyCooksD(
-    mobj = mod, 
-    stvar = "geostrata"
+multivar_mod <- svyglm(
+  reformulate(
+    response = outcome, 
+    termlabels = c(univar_result$covars)
   ),
-  leverage = svydiags::svyhat(mod),
-  resid = svydiags::svystdres(mod),
-  age = df_regression$age,
-  bzd = df_regression$bzd,
-  sex = df_regression$sex,
-  region = df_regression$region,
-  marital_status = df_regression$marital_status,
-  smoke = df_regression$smoke,
-  education = df_regression$education,
-  household_income = df_regression$household_income,
-  urban_rural = df_regression$urban_rural,
-  centered_age = df_regression$age
+  design = design_analytic,
+  family = binomial(link = "logit")
 )
 
-# Plotting outliers 
+broom::tidy(multivar_mod)
 
-ggplot(df.outliers, 
-       aes(x = leverage, y = resid.stdresids)) +
-  geom_point(aes(size = cooksd), alpha = 0.6) +
-  geom_hline(yintercept = 0, linetype = "dashed") +
-  scale_size_continuous(range = c(1, 10), guide = FALSE) + # Adjust size range as needed
-  labs(x = "Leverage", y = "Standardized Residuals",
-       title = "Leverage vs. Standardized Residuals",
-       subtitle = "Point size represents Cook's Distance") +
-  theme_minimal()
 
-problematic.outliers <- df.outliers %>%
+
+lrt_test <- function(mod, x){
+  
+  result <- regTermTest(model = mod, 
+                        test.terms = x, 
+                        method = "LRT")
+  
+  result$p
+}
+
+keep_vars <- univar_result$covars %>% 
+  map_dbl(
+    ~lrt_test(multivar_mod, .x)
+  ) %>% 
+  enframe(name = "variable", value = "p_value") %>% 
+  cbind(univar_result$covars) %>% 
+  filter(p_value < 0.05 | `univar_result$covars` == "bzd") %>% 
+  rename(
+    var = `univar_result$covars`
+  )
+
+# Checking if Confounder ----
+
+univar_result %>% 
   filter(
-    cooksd > 3
-  )
+    !(covars %in% keep_vars$var)
+  ) %>% select(covars)
 
-#... Checking Outliers ----
+# Marital Status was dropped so check if it's a confounder. 
 
-df_without_outliers <- df_regression %>%
-  dplyr::filter(
-    !(entity_id %in% problematic.outliers$id)
-  )
-
-design_without_outliers_analytic <- svydesign(data = df_without_outliers,
-                                              weights= ~wghts_analytic, 
-                                              strata = ~geostrata,
-                                              #fpc = ~strata_total,
-                                              ids = ~1,
-                                              nest = TRUE)
-
-mod_without_outliers <- svyglm(
-  depression ~ bzd + centered_age + sex + region + marital_status + smoke + household_income,
-  design = design_analytic,
-  family = stats::quasibinomial(link = "logit")
+check_confounding(fully_adjusted =   
+                    reformulate(response = outcome, 
+                                termlabels = c(keep_vars$var,
+                                               "marital_status")
+                    ),
+                  partially_adjusted = 
+                    reformulate(response = outcome, 
+                                termlabels = c(keep_vars$var)
+                    )
 )
 
-# Initial model (same as above).
 
-# Comparing estimate and SEs 
 
-mod
+# Can leave marital status out 
 
-broom::tidy(mod_without_outliers)
+# Check for Interaction Terms ----- 
 
-broom::tidy(mod)
+keep_vars$var # all of the variables that are going to be included 
 
-# Refitted model ----
+# For high blood pressure, thinking of: 
 
-# Check whatever issues there was. In this case, the main issue was VIF. So
-# check VIF and overall residuals 
+# - bzd*sex
+# - bzd*income
+# - bzd*smoke
 
-mod_refit <- svyglm(
-  hbp ~ bzd + centered_age + sex + smoke + education + household_income + centered_age*sex,
-  design = design_analytic,
-  family = stats::binomial(link = "logit")
+# Checking by looking at by checking across stratum
+
+# BZD*Sex
+
+table_matrix <- svytable(~hbp + bzd + sex, 
+                        design = design_analytic)  %>% 
+  as.matrix() 
+
+table_matrix[4,1]*table_matrix[1,1]  / (table_matrix[3,1]*table_matrix[2,1])
+
+table_matrix[8,1]*table_matrix[5,1]  / (table_matrix[7,1]*table_matrix[6,1])
+
+# BZD*Income
+
+table_matrix <- svytable(~hbp + bzd + income, 
+                         design = design_analytic) %>% 
+  as.matrix() 
+
+table_matrix[4,1]*table_matrix[1,1]  / (table_matrix[3,1]*table_matrix[2,1])
+
+table_matrix[8,1]*table_matrix[5,1]  / (table_matrix[7,1]*table_matrix[6,1])
+
+table_matrix[12,1]*table_matrix[9,1]  / (table_matrix[11,1]*table_matrix[10,1])
+
+
+# BZD * Smoke
+
+table_matrix <- svytable(~hbp + bzd + smoke, 
+                         design = design_analytic) %>% 
+  as.matrix() 
+
+
+table_matrix[4,1]*table_matrix[1,1]  / (table_matrix[3,1]*table_matrix[2,1])
+
+table_matrix[8,1]*table_matrix[5,1]  / (table_matrix[7,1]*table_matrix[6,1])
+
+table_matrix[12,1]*table_matrix[9,1]  / (table_matrix[11,1]*table_matrix[10,1])
+
+# include it
+
+# Testing Interactions in Model ----
+
+interaction_terms <- c(
+  "bzd*smoke"#,
+  #"bzd*income"#,
+  # "bzd*marital_status"
 )
 
-#... Plotting residuals vs participant id (entity_id) ----
 
-refitted_residuals = data.frame(
-  id = df_regression$entity_id,
-  resid = svydiags::svystdres(mod_refit)
+mod_interaction <- svyglm(
+  formula = reformulate(response = outcome, 
+                        termlabels = c(keep_vars$var, 
+                                       "bzd",
+                                       "marital_status",
+                                       interaction_terms)
+  ),
+  design = design_analytic, 
+  family = binomial(link = "logit")
 )
 
-ggplot(data = refitted_residuals, 
-       mapping = aes(x = id, y = resid.stdresids)) +
-  geom_point()
+broom::tidy(mod_interaction)
 
-#... VIF ----
-
-X1 <- df_regression[order(df_regression$geostrata),]
-
-X2 <- model.matrix(
-  ~bzd + centered_age + sex + smoke + education + income + centered_age*sex,
-  data = data.frame(X1)
-)
-
-vif <- svydiags::svyvif(
-  mobj = mod_refit, 
-  X = X2[,-1],
-  w = df_regression$wghts_analytic,
-  stvar = "geostrata",
-  clvar = NULL
-)
-
-broom::tidy(mod_refit)
-
+survey::regTermTest(mod_interaction, 
+                    "bzd:smoke",
+                    method = "LRT")
 
 # Final Model ----
 
-mod_refit$formula
+# No interaction terms 
 
 final_model <- svyglm(
-  hbp ~ bzd + centered_age + sex + smoke + education + household_income +
-    centered_age*sex,
+  formula = reformulate(response = outcome, 
+                        termlabels = c(keep_vars$var, 
+                                       "marital_status")
+  ),
   design = design_analytic,
   family = stats::binomial(link = "logit")
 )
 
-# P-Values ----
+broom::tidy(final_model) %>% 
+  filter(grepl("bzd", term)) 
 
-car::Anova(final_model, type = "III") %>%
-  as_tibble(rownames = "term") %>%
-  filter(grepl("bzd", term)) %>%
+
+# Checking Diagnostics ----
+
+#... Components for Diagnostics ----
+
+# Need to capture the covariate patterns based on the variable that are included
+
+final_model$formula
+
+df_regression <- df_regression %>% 
+  group_by(
+    bzd, 
+    age,
+    sex,
+    province, 
+    smoke,
+    education, 
+    income,
+    marital_status
+  ) %>% 
   mutate(
-    `Pr(>Chisq)` = round(`Pr(>Chisq)`, 6)
-  ) %>%
-  dplyr::select(term, `Pr(>Chisq)`)
+    mj = cur_group_id()
+  ) %>% 
+  ungroup() 
 
-# Terms ----
+# covar_pattern <- df_regression %>%
+#   select(
+#     covars,
+#     outcome,
+#     mj
+#   )
 
-final_model %>%
-  broom::tidy() %>%
-  filter(grepl("bzd", term)) %>%
+
+
+df_diag <- df_regression %>% 
   mutate(
-    OR = exp(estimate),
-    lower_ci = round(exp(estimate - 1.96*std.error),3),
-    upper_ci = round(exp(estimate + 1.96*std.error), 3),
-    conf_interval_95 = paste(lower_ci, " to ", upper_ci)
-  ) %>%
-  dplyr::select(
-    term, OR, conf_interval_95
+    rsj = rstandard(final_model, type = "pearson"), # Pearson standardized residuals
+    dj = residuals(final_model, type = "deviance"), # deviance
+    hj = hatvalues(final_model), # leverage 
+    pred_prob = predict(final_model, type = "response") #, newdata = covar_pattern)
+  ) %>% 
+  group_by(mj) %>% 
+  slice_head() %>% 
+  mutate(
+    deltaChisq = rsj^2,
+    deltaB = (rsj*hj) / (1-hj), 
+    deltaD = dj^2 / (1-hj)
   )
+
+ggplot(data = df_diag, aes(x = pred_prob, y = deltaD)) + 
+  geom_point() + 
+  labs(title = "Change in Deviance vs Predicted Probability", 
+       x = "\u03C0",
+       y = "\u0394D") +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5)
+  ) 
+
+# Covariate pattern 208 would be the problematic one. Going to check if 
+# the parameter estimates really change after removing this observation. 
+
+ggplot(data = df_diag, aes(x = pred_prob, y = deltaChisq)) + 
+  geom_point() +
+  labs(title = "Change in \u03C7\u00B2 vs Predicted Probability", 
+       x = "\u03C0",
+       y = "\u03C7\u00B2") +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5)
+  ) 
+
+ggplot(data = df_diag, aes(x = pred_prob, y = deltaB)) + 
+  geom_point() +
+  labs(title = "Change in \u0394\u03B2 vs Predicted Probability", 
+       x = "\u03C0",
+       y = "\u0394\u03B2") +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5)
+  ) 
+
+# mj 3481, 197, 208 
+
+# Having to Remove Covariate Pattern ----
+
+# If having to remove a covariate pattern, then need to remove it and 
+#repeat the process of fitting a model. 
+
+#... Survey Design ----
+
+design_analytic_updated <- svydesign(data = df_regression %>% 
+                                       filter(!(mj %in% c(13481, 197, 208))),
+                                     weights= ~wghts_analytic, 
+                                     strata = ~geostrata,
+                                     #fpc = ~strata_total,
+                                     ids = ~1,
+                                     nest = TRUE)
+
+svyglm(
+  formula = reformulate(response = outcome, 
+                        termlabels = c(keep_vars$var, "bzd")
+  ),
+  design = design_analytic_updated,
+  family = stats::binomial(link = "logit")
+) %>% 
+  broom::tidy() %>% 
+  filter(grepl("bzd", term))
+
+final_model %>% 
+  broom::tidy() %>% 
+  filter(grepl("bzd", term))
+
+# Conclusion: the change is so minimal on the parameters it doesn't even matter. 
+
+# Side note: I assume this is due to the large sample size that we have 
+
+# Final Result ----
+
+final_model %>% 
+  tidy() %>% 
+  filter(grepl("bzd", term)) %>% 
+  mutate(
+    or_lower = exp(estimate - 1.96*std.error), 
+    or = exp(estimate), 
+    or_upper = exp(estimate + 1.96*std.error)
+  )
+
+survey::regTermTest(final_model, "bzd", method = "LRT")
 
 final_model$formula

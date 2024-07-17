@@ -255,7 +255,7 @@ df_diag <- df_regression %>%
   slice_head() %>% 
   mutate(
     deltaChisq = rsj^2,
-    deltaB = (rsj*hj) / (1-hj), 
+    deltaB = (rsj^2*hj) / (1-hj), 
     deltaD = dj^2 / (1-hj)
   )
 

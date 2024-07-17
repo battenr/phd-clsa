@@ -262,12 +262,6 @@ interaction_terms <- c(
   # "bzd*marital_status"
 )
 
-reformulate(response = outcome, 
-            termlabels = c(keep_vars$var, 
-                           "sex",
-                           "marital_status",
-                           "smoke")
-
 
 mod_interaction <- svyglm(
   formula = reformulate(response = outcome, 
@@ -351,7 +345,7 @@ df_diag <- df_regression %>%
   slice_head() %>% 
   mutate(
     deltaChisq = rsj^2,
-    deltaB = (rsj*hj) / (1-hj), 
+    deltaB = (rsj^2*hj) / (1-hj), 
     deltaD = dj^2 / (1-hj)
   )
 

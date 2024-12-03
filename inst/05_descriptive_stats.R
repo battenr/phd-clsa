@@ -31,7 +31,8 @@ load("data/analytic_dataset.Rdata")
 # Converting all NAs to missing for reporting. This will still be NA in the 
 # regression analyses because then they will be dropped
 
-df.na.missing = df %>% mutate_all(~replace_na(., "missing")) %>% 
+df.na.missing = df %>% 
+  mutate_all(~replace_na(., "missing")) %>% 
   mutate(
     household_income = factor(household_income, 
                               levels = c(
@@ -65,11 +66,7 @@ unique(df.na.missing$household_income)
 
 # Survey Design ----
 
-design.infl <- svydesign(data = df.na.missing %>% 
-                           mutate(sex = ifelse(sex == "F", 1, 0),
-                                  included = 1,
-                                  bzd = ifelse(bzd == "yes", 1, 0),
-                                  smoke == ), 
+design.infl <- svydesign(data = df.na.missing, 
                          weights= ~wghts_inflation, 
                          strata = ~geostrata,
                          ids = ~1)
@@ -137,8 +134,10 @@ sqrt(svyvar(df.na.missing$age, design = design.infl))
 
 source("R/svy_countby.R")
 
+source("R/svy_count.R")
+
 c("sex", 
-  "region",
+  "province",
   "marital_status",
   "smoke",
   "education",
@@ -150,6 +149,12 @@ c("sex",
   )
 
 svy_countby(bzd)
+
+svy_count("province", data = df.na.missing)
+
+
+
+svy_countby("province", byvar = "bzd", data = df.na.missing) %>% arrange(bzd)
    
 
 

@@ -391,7 +391,7 @@ final_model %>%
 final_model$formula
 
 survey::regTermTest(final_model, test.terms = "bzd", method = "LRT")
-survey::regTermTest(final_model, test.terms = "bzd:income")
+survey::regTermTest(final_model, test.terms = "bzd:income", method = "LRT")
 
 
 # Calculating SE for interaction term 
